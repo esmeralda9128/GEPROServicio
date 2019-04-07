@@ -265,7 +265,7 @@ public class ServicioGEPRO extends Application {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response consultarProyecto(@QueryParam("proyecto") String proyecto) {
         DaoProyecto daoProyecto = new DaoProyecto();
-
+        
         JSONObject proyectoJ = null;
         try {
             proyectoJ = new JSONObject(proyecto);
@@ -304,14 +304,66 @@ public class ServicioGEPRO extends Application {
     }
 
     @GET
-    @Path("seguimientoProyecto")
+    @Path("seguimientoAdmin")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response seguimientoAdmin(@QueryParam("proyecto") String proyecto) throws ParseException {
+    public Response seguimientoAdmin() throws ParseException {
+        System.out.println(":v");
         DaoProyecto daoProyecto = new DaoProyecto();
         DaoUsuario daoUsuario = new DaoUsuario();
         DaoRecursoMaterial daoMaterial = new DaoRecursoMaterial();
-        JSONObject proyectoJ =null;
+        JSONObject proyectoJ = new JSONObject();
+        
+        BeanProyecto proyectoConsultado = daoProyecto.consultarProyectoporId(idProyectoGlobal);
+        String semana;
+        Double valorPlaneado = 0.0;
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fin = proyectoConsultado.getFinalProyecto();
+        java.util.Date fechaFin = sdf.parse(fin);
+        Calendar fecha = new GregorianCalendar();
+        int año = fecha.get(Calendar.YEAR);
+        int mes = fecha.get(Calendar.MONTH);
+        int dia = fecha.get(Calendar.DAY_OF_MONTH);
+        String actual = "" + año + "-" + (mes + 1) + "-" + dia;
+        java.util.Date fechadateactual = sdf.parse(actual);
+
+        if (fechadateactual.before(fechaFin)) {
+            semana = Integer.toString(((daoProyecto.consultarDias(proyectoConsultado.getInicioProyecto())) / 7) + 1);
+            valorPlaneado =(proyectoConsultado.getPresupuestoInicial()/proyectoConsultado.getSemanas())*Integer.parseInt(semana);
+        } else {
+            semana = "El proyecto ya termino";
+        }
+
+        respuestas.put("proyecto", proyectoConsultado);
+        respuestas.put("lider", daoUsuario.consultarLiderdeProyecto(idProyectoGlobal));
+        respuestas.put("recursosHumanos", daoUsuario.consultarRescursos(idProyectoGlobal));
+        respuestas.put("recursosMateriales", daoMaterial.listaRecursos(idProyectoGlobal));
+        respuestas.put("semana", semana);
+        respuestas.put("valorPlaneado", valorPlaneado);
+
+        try {
+
+            proyectoJ.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyectoJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+    
+     @GET
+    @Path("seguimientoProyecto")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response seguimiento(@QueryParam("proyecto") String proyecto) throws ParseException {
+        DaoProyecto daoProyecto = new DaoProyecto();
+        DaoUsuario daoUsuario = new DaoUsuario();
+        DaoRecursoMaterial daoMaterial = new DaoRecursoMaterial();
+        JSONObject proyectoJ = null;
           int idProyecto = 0;
           System.out.println(proyecto);
         try {
@@ -367,23 +419,27 @@ public class ServicioGEPRO extends Application {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response registrarRecursoHumano(@QueryParam("usuario") String usuario) throws ParseException {
+        System.out.println(":v");
         DaoUsuario daoUsuario = new DaoUsuario();
         BeanUsuario beanUsuario = null;
         JSONObject usuarioJ = null;
         String conpass = "";
         boolean registro = false;
+        int idProyecto =0;
         try {
             usuarioJ = new JSONObject(usuario);
             beanUsuario = new BeanUsuario(usuarioJ.getString("nombre"), usuarioJ.getString("apellidoP"), usuarioJ.getString("apellidoM"), usuarioJ.getString("usuario"), usuarioJ.getString("pass"), usuarioJ.getString("grado"), usuarioJ.getString("carrera"), usuarioJ.getString("rfc"), usuarioJ.getString("email"), Double.parseDouble(usuarioJ.getString("salario")));
             beanUsuario.setRol(usuarioJ.getString("rol"));
             conpass = usuarioJ.getString("conpass");
+            idProyecto = usuarioJ.getInt("idProyecto");
+
         } catch (JSONException e) {
             System.out.println("Error" + e);
         }
 
         if (conpass.equals(beanUsuario.getPass())) {
             if (daoUsuario.consultarUsuariosRepetidos(beanUsuario) == null) {
-                registro = daoUsuario.registrarRecursoHumano(beanUsuario, idProyectoGlobal);
+                registro = daoUsuario.registrarRecursoHumano(beanUsuario, idProyecto);
                 if (registro) {
                     mensaje = "Se ha registrado correctamente el recurso";
                     tipo = "success";
@@ -421,14 +477,16 @@ public class ServicioGEPRO extends Application {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response registrarRecursoMaterial(@QueryParam("material") String material) {
+        System.out.println(":v");
         DaoRecursoMaterial daoRecursoMaterial = new DaoRecursoMaterial();
         BeanRecursoMaterial beanRecursoMaterial = null;
         JSONObject objeto = null;
-        String conpass = "";
+        String conpass = ""; // Esta wea no se ocupa
         boolean registro = false;
         try {
             objeto = new JSONObject(material);
             beanRecursoMaterial = new BeanRecursoMaterial(objeto.getString("nombre"), objeto.getDouble("precio"), objeto.getInt("cantidad"));
+            idProyectoGlobal = objeto.getInt("idProyecto");
             Double total = beanRecursoMaterial.getCostoUnitario() * beanRecursoMaterial.getCantidad();
             beanRecursoMaterial.setTotal(total);
         } catch (JSONException e) {
@@ -489,7 +547,6 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
-    
     
     public static Date sumarDiasAFecha(Date fecha, int dias) {
         if (dias == 0) {
