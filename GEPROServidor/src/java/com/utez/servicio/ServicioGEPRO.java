@@ -7,6 +7,7 @@ package com.utez.servicio;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -25,10 +26,12 @@ import javax.ws.rs.core.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
 import utez.edu.modelo.bean.BeanProyecto;
+import utez.edu.modelo.bean.BeanRecursoComprado;
 import utez.edu.modelo.bean.BeanRecursoMaterial;
 import utez.edu.modelo.bean.BeanUsuario;
 import utez.edu.modelo.dao.DaoProyecto;
 import utez.edu.modelo.dao.DaoRecursoMaterial;
+import utez.edu.modelo.dao.DaoRecursoMaterialComprado;
 import utez.edu.modelo.dao.DaoUsuario;
 
 /**
@@ -99,7 +102,6 @@ public class ServicioGEPRO extends Application {
 //        constructor.header("Access-Control-Allow-Methods", "*");
 //        return constructor.build();
 //    }
-
     @GET
     @Path("registroProyecto")
     @Produces(MediaType.APPLICATION_JSON)
@@ -363,18 +365,21 @@ public class ServicioGEPRO extends Application {
         DaoProyecto daoProyecto = new DaoProyecto();
         DaoUsuario daoUsuario = new DaoUsuario();
         DaoRecursoMaterial daoMaterial = new DaoRecursoMaterial();
+        DaoRecursoMaterialComprado daoRecursoMaterialComprado = new DaoRecursoMaterialComprado();
         JSONObject proyectoJ = null;
-          int idProyecto = 0;
-          System.out.println(proyecto);
+        int idProyecto = 0;
+        System.out.println(proyecto);
+
         try {
             proyectoJ = new JSONObject(proyecto);
             idProyecto = proyectoJ.getInt("proyecto");
         } catch (JSONException ex) {
             System.out.println("Error" + ex);
         }
-        
+       
+
         BeanProyecto proyectoConsultado = daoProyecto.consultarProyectoporId(idProyecto);
-        String semana;
+        int semana = 0;
         Double valorPlaneado = 0.0;
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -388,16 +393,43 @@ public class ServicioGEPRO extends Application {
         java.util.Date fechadateactual = sdf.parse(actual);
 
         if (fechadateactual.before(fechaFin)) {
-            semana = Integer.toString(((daoProyecto.consultarDias(proyectoConsultado.getInicioProyecto())) / 7) + 1);
-            valorPlaneado =(proyectoConsultado.getPresupuestoInicial()/proyectoConsultado.getSemanas())*Integer.parseInt(semana);
-        } else {
-            semana = "El proyecto ya termino";
+            semana = ((daoProyecto.consultarDias(proyectoConsultado.getInicioProyecto())) / 7) + 1;
+            valorPlaneado = (proyectoConsultado.getPresupuestoInicial() / proyectoConsultado.getSemanas()) * semana; 
+        }else{
+            semana=0;
         }
+        
+        
+        
+         List<BeanRecursoComprado> materialesComprados = daoRecursoMaterialComprado.buscarRecursoComprado(idProyecto, semana);
+        List<BeanUsuario> recursosHumanos = daoUsuario.consultarRescursos(idProyecto);
+        List<BeanRecursoMaterial> materialesProyecto = daoMaterial.listaRecursos(idProyecto);
+        List<BeanRecursoMaterial> materialPorComprar = new ArrayList<>();
+        
+        for (int i = 0; i < materialesProyecto.size(); i++) {
+            materialPorComprar.add(materialesProyecto.get(i));
+            
+        }
+        for (int i = 0; i < materialesProyecto.size(); i++) {
+            for (int j = 0; j < materialesComprados.size(); j++) {
+                System.out.println("--->ReP "+materialesProyecto.get(i).getIdRecuroMat());
+                System.out.println("--->ReC "+materialesComprados.get(j).getMateriales().getIdRecuroMat());
+                if(materialesProyecto.get(i).getIdRecuroMat()==materialesComprados.get(j).getMateriales().getIdRecuroMat()){
+                    materialPorComprar.remove(i);
+                }
+            }
+        }
+        
+        
+        
+        
+        
 
         respuestas.put("proyecto", proyectoConsultado);
         respuestas.put("lider", daoUsuario.consultarLiderdeProyecto(idProyecto));
         respuestas.put("recursosHumanos", daoUsuario.consultarRescursos(idProyecto));
-        respuestas.put("recursosMateriales", daoMaterial.listaRecursos(idProyecto));
+        respuestas.put("recursosMateriales", materialesProyecto);
+        respuestas.put("materialesPorComprar", materialPorComprar);
         respuestas.put("semana", semana);
         respuestas.put("valorPlaneado", valorPlaneado);
 
@@ -530,8 +562,7 @@ public class ServicioGEPRO extends Application {
     public Response consultarPerfilLider() {
         DaoUsuario daoUsuario = new DaoUsuario();
         BeanUsuario beanUsuario = daoUsuario.consultarLiderdeProyecto(idProyectoGlobal);
-        
-        
+
         JSONObject objeto = new JSONObject();
         respuestas.put("usuario", beanUsuario);
         try {
@@ -547,7 +578,7 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
-    
+
     public static Date sumarDiasAFecha(Date fecha, int dias) {
         if (dias == 0) {
             return fecha;
