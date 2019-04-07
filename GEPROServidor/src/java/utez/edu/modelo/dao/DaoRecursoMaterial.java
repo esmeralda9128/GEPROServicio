@@ -112,4 +112,37 @@ public class DaoRecursoMaterial {
         }
         return recursoConsultado;
     }
+    
+    
+    public BeanRecursoMaterial buscarRecursoComprado(int id){
+
+        BeanRecursoMaterial recurso = null;
+         try {
+            con = Conexion.getConexion();
+            psm = con.prepareStatement("select * from recursosMateriales where idRecursosMateriales=?");
+            psm.setInt(1, id);
+            rs = psm.executeQuery();
+            if (rs.next()) {
+             recurso = new BeanRecursoMaterial();
+             recurso.setIdProyecto(rs.getInt("idRecursosMateriales"));
+             recurso.setNombreRecursoMat(rs.getString("nombre"));
+             recurso.setCostoUnitario(rs.getDouble("costoUnitario"));
+             recurso.setCantidad(rs.getInt("cantidad"));
+             recurso.setTotal(rs.getInt("total"));
+             recurso.setIdProyecto(rs.getInt("idProyecto"));
+             
+            }
+         }catch(SQLException ex){
+             System.out.println("Error DaoRecursoMaterial listaRecursos" + ex);
+         }finally {
+            try {
+                con.close();
+                psm.close();
+
+            } catch (SQLException ex) {
+                System.out.println("Error DaoRecursoMaterial listaRecursos()cerrar" + ex);
+            }
+        }
+        return recurso;
+    }
 }
