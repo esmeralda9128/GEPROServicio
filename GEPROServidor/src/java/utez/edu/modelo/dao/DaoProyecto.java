@@ -65,7 +65,7 @@ public class DaoProyecto {
             csm.setString(16, beanUsuario.getEmail());
             resultado = csm.executeUpdate() == 1;
         } catch (SQLException ex) {
-            System.out.println("Error DaoCuenta registroCuenta()" + ex);
+            System.out.println("Error DaoProyecto registroCuenta()" + ex);
 
         } finally {
 
@@ -73,7 +73,7 @@ public class DaoProyecto {
                 con.close();
                 csm.close();
             } catch (SQLException ex) {
-                System.out.println("Error DaoCuenta registroCuenta()cerrar" + ex);
+                System.out.println("Error DaoProyecto registroCuenta()cerrar" + ex);
             }
         }
         return resultado;
@@ -100,14 +100,14 @@ public class DaoProyecto {
                 proyectoConsultado.setNombre(rs.getString("nombre"));
             }
         } catch (SQLException ex) {
-            System.out.println("Error DaoCuenta verificarNombredeProyecto()" + ex);
+            System.out.println("Error DaoProyecto verificarNombredeProyecto()" + ex);
         } finally {
             try {
                 con.close();
                 psm.close();
                 rs.close();
             } catch (SQLException ex) {
-                System.out.println("Error DaoCuenta verificarNombredeProyecto()cerrar" + ex);
+                System.out.println("Error DaoProyecto verificarNombredeProyecto()cerrar" + ex);
             }
         }
 
@@ -137,14 +137,14 @@ public class DaoProyecto {
                 usuarioConsultado.setNombre(rs.getString("nombre"));
             }
         } catch (SQLException ex) {
-            System.out.println("Error DaoCuenta verificarNombredeLider()" + ex);
+            System.out.println("Error DaoProyecto verificarNombredeLider()" + ex);
         } finally {
             try {
                 con.close();
                 psm.close();
                 rs.close();
             } catch (SQLException ex) {
-                System.out.println("Error DaoCuenta verificarNombredeLider()cerrar" + ex);
+                System.out.println("Error DaoProyecto verificarNombredeLider()cerrar" + ex);
             }
         }
 
@@ -174,18 +174,19 @@ public class DaoProyecto {
                 proyecto.setPresupuestoInicial(rs.getDouble("presupuestoInicial"));
                 proyecto.setReserva(rs.getDouble("reserva"));
                 proyecto.setPresupustoActual(rs.getDouble("presupuestoActual"));
+                proyecto.setValorPlaneado(rs.getDouble("valorPlaneado"));
                 DaoUsuario dao = new DaoUsuario();
                 proyecto.setLider(dao.consultarLiderdeProyecto(proyecto.getIdProyecto()));
                 proyectos.add(proyecto);
             }
         } catch (SQLException ex) {
-            System.out.println("Error DaoCuenta consultarProyectos()" + ex);
+            System.out.println("Error DaoProyecto consultarProyectos()" + ex);
         } finally {
             try {
                 con.close();
                 psm.close();
             } catch (SQLException ex) {
-                System.out.println("Error DaoCuenta consultarProyectos()cerrar" + ex);
+                System.out.println("Error DaoProyecto consultarProyectos()cerrar" + ex);
             }
         }
 
@@ -208,7 +209,7 @@ public class DaoProyecto {
             csm.setInt(1, idProyecto);
             resultado = csm.executeUpdate() == 1;
         } catch (SQLException ex) {
-            System.out.println("Error DaoCuenta eliminarProyecto()" + ex);
+            System.out.println("Error DaoProyecto eliminarProyecto()" + ex);
 
         } finally {
             try {
@@ -216,7 +217,7 @@ public class DaoProyecto {
                 csm.close();
 
             } catch (SQLException ex) {
-                System.out.println("Error DaoCuenta eliminarProyecto()cerrar" + ex);
+                System.out.println("Error DaoProyecto eliminarProyecto()cerrar" + ex);
             }
         }
 
@@ -245,19 +246,52 @@ public class DaoProyecto {
 
             }
         } catch (SQLException ex) {
-            System.out.println("Error DaoCuenta consultarProyectoporId()" + ex);
+            System.out.println("Error DaoProyecto consultarProyectoporId()" + ex);
         } finally {
             try {
                 con.close();
                 psm.close();
                 rs.close();
             } catch (SQLException ex) {
-                System.out.println("Error DaoCuenta consultarProyectoporId()cerrar" + ex);
+                System.out.println("Error DaoProyecto consultarProyectoporId()cerrar" + ex);
             }
         }
 
         return proyectoConsultado;
     }
+    
+    public double consultarPresupuestoGastado(int id){
+        double presupuestoGastado =0;
+        try{
+            con = Conexion.getConexion();
+            csm = con.prepareCall("{call dbo.pa_calcularCostoReal (?)}");
+            csm.setInt(1, id);
+            rs = csm.executeQuery();
+            if(rs.next()){
+                presupuestoGastado = (rs.getDouble("CostoReal"));
+            }
+        }catch(SQLException ex){
+            System.out.println("Error DaoProyecto consultarPresupuestoGastado()" + ex);
+        }finally{
+            try{
+                con.close();
+                csm.close();
+                rs.close();                
+            }catch(SQLException e){
+                System.out.println("Error DaoProyecto consultarPresupuestoGastado()-ciere" + e);
+            }
+        }
+        return presupuestoGastado;
+    }
+    
+    
+    
+    /**
+     * Método para ver la diferencia entre la fecha de inicio y la fecha actual y saber cuantas
+     * semanas han pasado 
+     * @param fecha se refiere a la fecha acutal
+     * @return regresa los días de diferencia
+     */
 
     public int consultarDias(String fecha) {
         int diasDiferencia = 0;
@@ -275,11 +309,6 @@ public class DaoProyecto {
 
         return diasDiferencia;
     }
-
-    public static void main(String[] args) {
-        DaoProyecto daoProyecto = new DaoProyecto();
-        int numero = 6 / 7;
-        System.out.println(numero);
-        System.out.println(daoProyecto.consultarDias("2019-03-28"));
-    }
+  
+ 
 }
