@@ -14,6 +14,8 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Consumes;
@@ -23,6 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import utez.edu.modelo.bean.BeanProyecto;
@@ -315,8 +318,6 @@ public class ServicioGEPRO extends Application {
         DaoRecursoMaterialComprado daoRecursoMaterialComprado = new DaoRecursoMaterialComprado();
         JSONObject proyectoJ = null;
         int idProyecto = 0;
-        System.out.println(proyecto);
-
         try {
             proyectoJ = new JSONObject(proyecto);
             idProyecto = proyectoJ.getInt("proyecto");
@@ -376,7 +377,6 @@ public class ServicioGEPRO extends Application {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response registrarRecursoHumano(@QueryParam("usuario") String usuario) throws ParseException {
-        System.out.println(":v");
         DaoUsuario daoUsuario = new DaoUsuario();
         BeanUsuario beanUsuario = null;
         JSONObject usuarioJ = null;
@@ -498,6 +498,42 @@ public class ServicioGEPRO extends Application {
             System.out.println("Error" + e);
         }
 
+        Response.ResponseBuilder constructor = Response.ok(objeto.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    @GET
+    @Path("comprarRecurso")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response comprarRecurso(@QueryParam("materiales") String materiales) {
+        JSONObject objeto = new JSONObject();
+        JSONArray array = null;
+        DaoRecursoMaterial daoRecursoMaterial = new DaoRecursoMaterial();
+        List<BeanRecursoMaterial> materialesporComprar = new ArrayList<>();
+        double total = 0;
+        try {
+            array = new JSONArray(materiales);
+            for (int i = 0; i < array.length(); i++) {
+                BeanRecursoMaterial recurso = daoRecursoMaterial.buscarRecursoComprado(array.getInt(i));
+                materialesporComprar.add(recurso);
+                total += recurso.getTotal();
+            }
+        } catch (JSONException ex) {
+            Logger.getLogger(ServicioGEPRO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        respuestas.put("mensaje", "¿Seguro que quieres comprar los Recursos Materiales?");
+        respuestas.put("mensaje2", "El total es " + total);
+        respuestas.put("materialesporComprar", materialesporComprar);
+        respuestas.put("total", total);
+        try {
+            objeto.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
         Response.ResponseBuilder constructor = Response.ok(objeto.toString());
         constructor.header("Access-Control-Allow-Origin", "*");
         constructor.header("Access-Control-Allow-Methods", "*");
