@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package utez.edu.modelo.dao;
 
 import java.sql.CallableStatement;
@@ -224,6 +220,11 @@ public class DaoProyecto {
         return resultado;
     }
 
+    /**
+     * Método para buscar un proyecto por su id
+     * @param id es el id del proyecto que se quiere consultar
+     * @return regresa el proyecto enconrado
+     */
     public BeanProyecto consultarProyectoporId(int id) {
         BeanProyecto proyectoConsultado = null;
         try {

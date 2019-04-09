@@ -7,6 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import utez.edu.modelo.bean.BeanActividad;
 import utez.edu.modelo.bean.BeanUsuario;
 import utez.edu.mx.utilerias.Conexion;
 
@@ -406,5 +409,79 @@ public class DaoUsuario {
 
         return usuarioConsultado;
     }
+   /**
+    * 
+    * @return 
+    */
+   public List<BeanUsuario> consultarUsuarios3(int idProyecto){
+       List<BeanUsuario> usuarios = new ArrayList<>();
+       BeanUsuario usuarioConsultado = null;
+        try {
+            con = Conexion.getConexion();
+            psm = con.prepareStatement("select * from usuario where idProyecto=? and tipo=3");
+            psm.setInt(1, idProyecto);
+            rs = psm.executeQuery();
+            while(rs.next()) {
+                usuarioConsultado = new BeanUsuario();
+                usuarioConsultado.setId(rs.getInt("idUsuario"));
+                usuarioConsultado.setNombre(rs.getString("nombre"));
+                usuarioConsultado.setPrimerApellido(rs.getString("primerApellido"));
+                usuarioConsultado.setSegundoApellido(rs.getString("segundoApellido"));
+                usuarioConsultado.setUsuario(rs.getString("usuario"));
+                usuarioConsultado.setPass(rs.getString("pass"));
+                usuarioConsultado.setRol(rs.getString("rol"));
+                usuarioConsultado.setSalario(rs.getDouble("salario"));
+                usuarioConsultado.setGradoEstudios(rs.getString("gradoEstudios"));
+                usuarioConsultado.setCarrera(rs.getString("carrera"));
+                usuarioConsultado.setRfc(rs.getString("rfc"));
+                usuarioConsultado.setEmail(rs.getString("email"));
+                usuarioConsultado.setTipo(rs.getInt("tipo"));
+                usuarioConsultado.setIdProyecto(rs.getInt("idProyecto"));
+                usuarios.add(usuarioConsultado);
+            }
+        }catch (SQLException ex) {
+            System.out.println("Error DaoUsuario consultarUsuarios3()" + ex);
+        } finally {
+            try {
+                con.close();
+                psm.close();
+
+            } catch (SQLException ex) {
+                System.out.println("Error DaoUsuario consultarUsuarios3() cerrar" + ex);
+            }
+        }
+       return usuarios;
+   }
+   
+   public List<BeanActividad> mostrarActividades(int idUsuario){
+       List<BeanActividad> misActividades = new ArrayList<>();
+       BeanActividad actividad = null;
+       
+        try {
+            con = Conexion.getConexion();
+            psm = con.prepareStatement("select * from actividades where idUsuario = ?");
+            psm.setInt(1, idUsuario);
+            rs = psm.executeQuery();
+            while (rs.next()) {                
+                actividad = new BeanActividad();
+                actividad.setIdActividad(rs.getInt("idActividades"));
+                actividad.setActividad(rs.getString("nombreActividad"));
+                actividad.setDescripcion(rs.getString("descripcion"));
+                actividad.setFechaActividad(rs.getString("fecha"));
+                misActividades.add(actividad);
+            }
+        } catch (SQLException ex) {
+            System.out.println("Error DaoUsuario mostrarActividades()" + ex);
+        } finally {
+            try {
+                con.close();
+                psm.close();
+
+            } catch (SQLException ex) {
+                System.out.println("Error DaoUsuario mostrarActividades() cerrar" + ex);
+            }
+        }
+        return misActividades;
+   }
 
 }
