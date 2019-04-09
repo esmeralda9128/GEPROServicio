@@ -10,7 +10,6 @@ import java.util.List;
 import utez.edu.modelo.bean.BeanUsuario;
 import utez.edu.mx.utilerias.Conexion;
 
-
 /**
  * Esta clase se utiliza para hacer métodos entre la aplicación y la base de
  * datos, referente a la tabla usuario
@@ -19,8 +18,6 @@ import utez.edu.mx.utilerias.Conexion;
  * @version 1 15/03/2019
  *
  */
-
-
 public class DaoUsuario {
 
     private ResultSet rs;
@@ -111,7 +108,7 @@ public class DaoUsuario {
                 usuarioConsultado.setEmail(rs.getString("email"));
                 usuarioConsultado.setTipo(rs.getInt("tipo"));
                 usuarioConsultado.setIdProyecto(rs.getInt("idProyecto"));
-            }else{
+            } else {
                 usuarioConsultado = consultarAdministrador(usuario, pass);
             }
         } catch (SQLException ex) {
@@ -212,19 +209,22 @@ public class DaoUsuario {
     public boolean modificarPerfilAdministrador(BeanUsuario administrador) {
         try {
             con = Conexion.getConexion();
-            psm = con.prepareStatement("update administrador set nombre=?,pass=?,usuario=?,carrera=?,gradoEstudios?");
-            rs = psm.executeQuery();
+            psm = con.prepareCall("update administrador set nombre=?,pass=?,usuario=?,carrera=?,gradoEstudios=?");
+            psm.setString(1, administrador.getNombre());
+            psm.setString(2, administrador.getPass());
+            psm.setString(3, administrador.getUsuario());
+            psm.setString(4, administrador.getCarrera());
+            psm.setString(5, administrador.getGradoEstudios());
 
+            resultado = psm.executeUpdate() == 1;
         } catch (SQLException ex) {
-            System.out.println("Error DaoUsuario verificarNombredeLider()" + ex);
-
+            System.out.println("Error DaoUsuario en modificarPerfilAdministrador" + ex);
         } finally {
             try {
                 con.close();
                 psm.close();
-
             } catch (SQLException ex) {
-                System.out.println("Error DaoUsuario verificarNombredeLider()cerrar" + ex);
+                System.out.println("Error DaoUsuario en conexion modificarPerfilAdministrador-cierre" + ex);
             }
         }
         return resultado;
@@ -321,18 +321,15 @@ public class DaoUsuario {
         return recursos;
     }
 
-
-/** Método para modificar la información personal del Administrador
-    *
-     * @param
-    administrador es la información a modificar del Administrador
-    * @
-    
-    return retornar un booleano es decir si se hizo la actulización o no
-
-    */
-    
-
+    /**
+     * Método para modificar la información personal del Administrador
+     *
+     * @param administrador es la información a modificar del Administrador
+     * @
+     *
+     * return retornar un booleano es decir si se hizo la actulización o no
+     *
+     */
     /**
      * Método para insertar un nuevo recurso humano
      *
@@ -340,7 +337,6 @@ public class DaoUsuario {
      * @param idProyecto
      * @return
      */
-
     public boolean registrarRecursoHumano(BeanUsuario beanUsuario, int idProyecto) {
         try {
             con = Conexion.getConexion();
@@ -362,7 +358,6 @@ public class DaoUsuario {
             System.out.println("Error DaoUsuario registrarRecursoHumano()" + ex);
 
         }
-
         return resultado;
     }
 
@@ -371,8 +366,7 @@ public class DaoUsuario {
      * @param beanUsuario
      * @return
      */
-
-   public BeanUsuario consultarUsuariosRepetidos(BeanUsuario beanUsuario) {
+    public BeanUsuario consultarUsuariosRepetidos(BeanUsuario beanUsuario) {
         BeanUsuario usuarioConsultado = null;
         try {
             con = Conexion.getConexion();

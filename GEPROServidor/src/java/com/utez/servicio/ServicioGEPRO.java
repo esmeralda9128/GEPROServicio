@@ -540,6 +540,69 @@ public class ServicioGEPRO extends Application {
         return constructor.build();
     }
 
+    /**
+     * ************ Aquí hice weas yo ***************
+     */
+    @GET
+    @Path("actualizarPerfilAdmin")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response actualizarPerfilAdmin(@QueryParam("perfilAdmin") String perfilAdmin) throws ParseException {
+        DaoUsuario daoUsuario = new DaoUsuario();
+        BeanUsuario beanAdmin = new BeanUsuario();
+        JSONObject usuarioJ = null;
+        String conpass = "";
+        boolean registro = false;
+        try {
+            usuarioJ = new JSONObject(perfilAdmin);
+            beanAdmin.setNombre(usuarioJ.getString("nombre"));
+            beanAdmin.setUsuario(usuarioJ.getString("usuario"));
+            // La contraseña pasada se agrega - en caso de no existir modificaciones
+            beanAdmin.setPass(usuarioJ.getString("pass"));
+            conpass = usuarioJ.getString("pass");
+
+            beanAdmin.setCarrera(usuarioJ.getString("carrera"));
+            beanAdmin.setGradoEstudios(usuarioJ.getString("gradoEstudios"));
+
+            // Verificar si existe algo en la nueva contraseña
+            if (usuarioJ.getString("newPass").length() != 0) {
+                // Si existe algo se agrega al beanUsuario - Con la finalidad de reemplazar
+                beanAdmin.setPass(usuarioJ.getString("newPass"));
+                conpass = usuarioJ.getString("confirmNewPass");
+            }
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+
+        // Verificaciones
+        if (conpass.equals(beanAdmin.getPass())) {
+            registro = daoUsuario.modificarPerfilAdministrador(beanAdmin);
+            if (registro) {
+                mensaje = "Se ha actualizado correctamente el perfil de administrador";
+                tipo = "success";
+            } else {
+                mensaje = "No se pudo actualizar el perfil de administrador";
+                tipo = "error";
+            }
+        } else {
+            mensaje = "Las contraseñas no coinciden";
+            tipo = "error";
+        }
+
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("tipo", tipo);
+        respuestas.put("registro", registro);
+        try {
+            usuarioJ.put("respuesta", respuestas);
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(usuarioJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
     public static Date sumarDiasAFecha(Date fecha, int dias) {
         if (dias == 0) {
             return fecha;
