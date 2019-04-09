@@ -14,8 +14,6 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Consumes;
@@ -50,6 +48,11 @@ public class ServicioGEPRO extends Application {
     String tipo = "";
     Map respuestas = new HashMap();
     public static int idProyectoGlobal;
+    public static double totalGlobal;
+    public static String fechaGlobal;
+    public static int semanaGlobal;
+    public static int usarioPagarGlobal;
+    public static List<BeanRecursoMaterial> materialesGlobal = new ArrayList<>();
 
     @GET
     @Path("registroProyecto")
@@ -259,7 +262,6 @@ public class ServicioGEPRO extends Application {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response seguimientoAdmin() throws ParseException {
-        System.out.println(":v");
         DaoProyecto daoProyecto = new DaoProyecto();
         DaoUsuario daoUsuario = new DaoUsuario();
         DaoRecursoMaterial daoMaterial = new DaoRecursoMaterial();
@@ -346,11 +348,11 @@ public class ServicioGEPRO extends Application {
             semana = 0;
         }
 
-        List<BeanRecursoComprado> materialesComprados = daoRecursoMaterialComprado.buscarRecursoComprado(idProyecto, semana);
+        List<BeanRecursoComprado> materialesComprados = daoRecursoMaterialComprado.buscarRecursosComprado(idProyecto, semana);
         List<BeanUsuario> recursosHumanos = daoUsuario.consultarRescursos(idProyecto);
         List<BeanRecursoMaterial> materialesProyecto = daoMaterial.listaRecursos(idProyecto);
         List<BeanRecursoMaterial> materialPorComprar = new ArrayList<>();
-
+        respuestas.put("fecha", fechadateactual);
         respuestas.put("proyecto", proyectoConsultado);
         respuestas.put("lider", daoUsuario.consultarLiderdeProyecto(idProyecto));
         respuestas.put("recursosHumanos", daoUsuario.consultarRescursos(idProyecto));
@@ -358,6 +360,7 @@ public class ServicioGEPRO extends Application {
         respuestas.put("semana", semana);
         respuestas.put("presuPuestoGastado", daoProyecto.consultarPresupuestoGastado(idProyecto));
         respuestas.put("valorPlaneado", valorPlaneado);
+        respuestas.put("fecha", actual);
 
         try {
 
@@ -434,7 +437,6 @@ public class ServicioGEPRO extends Application {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response registrarRecursoMaterial(@QueryParam("material") String material) {
-        System.out.println(":v");
         DaoRecursoMaterial daoRecursoMaterial = new DaoRecursoMaterial();
         BeanRecursoMaterial beanRecursoMaterial = null;
         JSONObject objeto = null;
@@ -505,15 +507,22 @@ public class ServicioGEPRO extends Application {
     }
 
     @GET
-    @Path("comprarRecurso")
+    @Path("mostrarAlertasRecursos")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response comprarRecurso(@QueryParam("materiales") String materiales) {
+    public Response comprarRecurso(@QueryParam("materiales") String materiales) throws ParseException {
         JSONObject objeto = new JSONObject();
         JSONArray array = null;
         DaoRecursoMaterial daoRecursoMaterial = new DaoRecursoMaterial();
+        DaoProyecto daoProyecto = new DaoProyecto();
+        DaoRecursoMaterialComprado daoRecursoComprado = new DaoRecursoMaterialComprado();
         List<BeanRecursoMaterial> materialesporComprar = new ArrayList<>();
         double total = 0;
+        int semana = 0;
+        String mensaje2 = "";
+        boolean bandera = false;
+        String actual = "";
+
         try {
             array = new JSONArray(materiales);
             for (int i = 0; i < array.length(); i++) {
@@ -522,18 +531,126 @@ public class ServicioGEPRO extends Application {
                 total += recurso.getTotal();
             }
         } catch (JSONException ex) {
-            Logger.getLogger(ServicioGEPRO.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Error" + ex);
         }
-        respuestas.put("mensaje", "¿Seguro que quieres comprar los Recursos Materiales?");
-        respuestas.put("mensaje2", "El total es " + total);
+        if (array.length() != 0) {
+
+            BeanProyecto proyectoConsultado = daoProyecto.consultarProyectoporId(materialesporComprar.get(0).getIdProyecto());
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String fin = proyectoConsultado.getFinalProyecto();
+            java.util.Date fechaFin = sdf.parse(fin);
+            Calendar fecha = new GregorianCalendar();
+            int año = fecha.get(Calendar.YEAR);
+            int mes = fecha.get(Calendar.MONTH);
+            int dia = fecha.get(Calendar.DAY_OF_MONTH);
+            actual = "" + año + "-" + (mes + 1) + "-" + dia;
+            java.util.Date fechadateactual = sdf.parse(actual);
+
+            if (fechadateactual.before(fechaFin)) {
+                semana = ((daoProyecto.consultarDias(proyectoConsultado.getInicioProyecto())) / 7) + 1;
+            } else {
+                semana = 0;
+            }
+            for (int i = 0; i < materialesporComprar.size(); i++) {
+                if (daoRecursoComprado.buscarRecursoComprado(materialesporComprar.get(i).getIdRecuroMat(), semana) != null) {
+
+                    mensaje = "Ya compraste alguno de esos materiales esta semana";
+                    mensaje2 = "No puedes repetir recursos en la misma semana";
+                    tipo = "error";
+                    idProyectoGlobal = materialesporComprar.get(0).getIdProyecto();
+                    bandera = true;
+                }
+            }
+            if (!bandera) {
+                mensaje = "¿Seguro que quieres comprar los Recursos Materiales?";
+                mensaje2 = "El total es " + total;
+                tipo = "question";
+            }
+        }
+        System.out.println("Tamaño de arreglo original" + materialesporComprar.size());
+        totalGlobal = total;
+
+        materialesGlobal = materialesporComprar;
+        fechaGlobal = actual;
+        semanaGlobal = semana;
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("mensaje2", mensaje2);
         respuestas.put("materialesporComprar", materialesporComprar);
         respuestas.put("total", total);
+        respuestas.put("bandera", bandera);
         try {
             objeto.put("respuesta", respuestas);
 
         } catch (JSONException e) {
             System.out.println("Error" + e);
         }
+        Response.ResponseBuilder constructor = Response.ok(objeto.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    @GET
+    @Path("comprarRecursosMateriales")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response comprarRecursos() {
+        JSONObject objeto = new JSONObject();
+
+        DaoProyecto daoProyecto = new DaoProyecto();
+        DaoRecursoMaterialComprado daoComprado = new DaoRecursoMaterialComprado();
+        System.out.println("total" + totalGlobal);
+        System.out.println("materiales tamaño" + materialesGlobal.size());
+        System.out.println("id de proyecto" + idProyectoGlobal);
+        BeanProyecto proyecto = daoProyecto.consultarProyectoporId(idProyectoGlobal);
+        if (proyecto.getPresupustoActual() > totalGlobal) {
+            for (int i = 0; i < materialesGlobal.size(); i++) {
+                if (daoComprado.comprarRecursoMaterial(idProyectoGlobal, materialesGlobal.get(i).getIdRecuroMat(), fechaGlobal, semanaGlobal)) {
+                    mensaje = "Se han comprado los materiales correctamente";
+                    tipo = "success";
+                } else {
+                    mensaje = "No se compraron los materiales apartir del material " + materialesGlobal.get(i).getNombreRecursoMat();
+                    tipo = "error";
+                    break;
+                }
+            }
+        }
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("tipo", tipo);
+        try {
+            objeto.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(objeto.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    @GET
+    @Path("usuarioPagar")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response usuarioPagar(@QueryParam("usuario") String usuario) throws ParseException {
+        JSONObject objeto = null;
+        int idUsuario = 0;
+        int idProyecto = 0;
+        try {
+            objeto = new JSONObject(usuario);
+            idUsuario = objeto.getInt("idUsurio");
+            idProyecto = objeto.getInt("idProyecto");
+        } catch (JSONException ex) {
+            System.out.println("Error" + ex);
+        }
+        idProyectoGlobal = idProyecto;
+        usarioPagarGlobal = idUsuario;
+        if(objeto==null){
+            objeto= new JSONObject();
+        }
+        System.out.println("Id de usuario a pagar"+usarioPagarGlobal);
+        System.out.println("ide de proyecto de usuario a pagar"+idProyectoGlobal);
         Response.ResponseBuilder constructor = Response.ok(objeto.toString());
         constructor.header("Access-Control-Allow-Origin", "*");
         constructor.header("Access-Control-Allow-Methods", "*");
