@@ -28,6 +28,7 @@ import javax.ws.rs.core.Response;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import utez.edu.modelo.bean.BeanActividad;
 import utez.edu.modelo.bean.BeanProyecto;
 import utez.edu.modelo.bean.BeanRecursoComprado;
 import utez.edu.modelo.bean.BeanRecursoMaterial;
@@ -50,6 +51,7 @@ public class ServicioGEPRO extends Application {
     String tipo = "";
     Map respuestas = new HashMap();
     public static int idProyectoGlobal;
+    public static int idUsuarioGlobal;
 
     @GET
     @Path("registroProyecto")
@@ -549,4 +551,94 @@ public class ServicioGEPRO extends Application {
         calendar.add(Calendar.DAY_OF_YEAR, dias);
         return calendar.getTime();
     }
+
+    @GET
+    @Path("seguimientoEmpleados")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response seguimientoEmpleado(@QueryParam("idProyecto") String idProyecto1) {
+        JSONObject objetoJSON = null;
+        int idProyecto = 0;
+        DaoUsuario miDaoUsuario = new DaoUsuario();
+        List<BeanUsuario> usuarios = null;
+        try {
+            objetoJSON = new JSONObject(idProyecto1);
+            idProyecto = objetoJSON.getInt("proyecto");
+        } catch (JSONException ex) {
+            System.out.println("Error" + ex);
+        }
+        usuarios = miDaoUsuario.consultarUsuarios3(idProyecto);
+        System.out.println(usuarios.size());
+        try {
+            objetoJSON = new JSONObject();
+            if (usuarios == null) {
+                objetoJSON.put("mensaje", "No hay usuarios registrados...");
+                objetoJSON.put("tipo", "error");
+            } else {
+                objetoJSON.put("mensaje", "Usuarios encontrados");
+                objetoJSON.put("tipo", "success");
+                respuestas.put("usuarios", usuarios);
+                objetoJSON.put("respuesta", respuestas);
+            }
+        } catch (JSONException ex) {
+            Logger.getLogger(ServicioGEPRO.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Response.ResponseBuilder constructor = Response.ok(objetoJSON.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    
+    
+    
+    @GET
+    @Path("mostrarActividades")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response mostrarActividades() {
+        JSONObject objetoJSON = null;
+        DaoUsuario miDaoUsuario = new DaoUsuario();
+        List<BeanActividad> actividades = null;
+        try {
+            System.out.println("El idGobal es " + idUsuarioGlobal);
+            actividades = miDaoUsuario.mostrarActividades(idUsuarioGlobal);
+            objetoJSON = new JSONObject();
+            if (actividades.isEmpty()) {
+                objetoJSON.put("mensaje", "No hay usuarios registrados...");
+                objetoJSON.put("tipo", "error");
+            } else {
+                objetoJSON.put("mensaje", "Usuarios encontrados");
+                objetoJSON.put("tipo", "success");
+                respuestas.put("actividades", actividades);
+                objetoJSON.put("respuesta", respuestas);
+            }
+        } catch (JSONException ex) {
+            System.out.println("Error" + ex);
+        }
+        Response.ResponseBuilder constructor = Response.ok(objetoJSON.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+    
+    @GET
+    @Path("consultarActividadId")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response consultarActividadId(@QueryParam("id") String id) {
+        JSONObject proyectoJ = null;
+        try {
+            proyectoJ = new JSONObject(id);
+            idUsuarioGlobal = proyectoJ.getInt("id");
+            System.out.println("EL id en consultar actividad id es " + idUsuarioGlobal);
+        } catch (JSONException ex) {
+            System.out.println("Error" + ex);
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyectoJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+    
 }
