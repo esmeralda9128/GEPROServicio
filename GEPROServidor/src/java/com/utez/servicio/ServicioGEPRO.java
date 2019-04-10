@@ -31,6 +31,7 @@ import utez.edu.modelo.bean.BeanProyecto;
 import utez.edu.modelo.bean.BeanRecursoComprado;
 import utez.edu.modelo.bean.BeanRecursoMaterial;
 import utez.edu.modelo.bean.BeanUsuario;
+import utez.edu.modelo.dao.DaoNomina;
 import utez.edu.modelo.dao.DaoProyecto;
 import utez.edu.modelo.dao.DaoRecursoMaterial;
 import utez.edu.modelo.dao.DaoRecursoMaterialComprado;
@@ -55,7 +56,6 @@ public class ServicioGEPRO extends Application {
     public static int usarioPagarGlobal;
     public static List<BeanRecursoMaterial> materialesGlobal = new ArrayList<>();
     public static int idUsuarioGlobal;
-
 
     @GET
     @Path("registroProyecto")
@@ -489,11 +489,17 @@ public class ServicioGEPRO extends Application {
     @Path("consultarPerfilLider")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response consultarPerfilLider() {
+    public Response consultarPerfilLider(@QueryParam("idUsuario") String idUsuario) {
         DaoUsuario daoUsuario = new DaoUsuario();
-        BeanUsuario beanUsuario = daoUsuario.consultarLiderdeProyecto(idProyectoGlobal);
-
-        JSONObject objeto = new JSONObject();
+        int idUsuarioRegresado = 0;
+        JSONObject objeto = null;
+        try {
+            objeto = new JSONObject(idUsuario);
+            idUsuarioRegresado = objeto.getInt("proyecto");
+        } catch (JSONException e) {
+            System.out.println(e);
+        }
+        BeanUsuario beanUsuario = daoUsuario.consultarLiderdeProyecto(idUsuarioRegresado);
         respuestas.put("usuario", beanUsuario);
         try {
 
@@ -636,7 +642,7 @@ public class ServicioGEPRO extends Application {
     @Path("usuarioPagar")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response usuarioPagar(@QueryParam("usuario") String usuario) throws ParseException {
+    public Response usuarioPagar(@QueryParam("usuario") String usuario) {
         JSONObject objeto = null;
         int idUsuario = 0;
         int idProyecto = 0;
@@ -649,11 +655,81 @@ public class ServicioGEPRO extends Application {
         }
         idProyectoGlobal = idProyecto;
         usarioPagarGlobal = idUsuario;
-        if(objeto==null){
-            objeto= new JSONObject();
+        if (objeto == null) {
+            objeto = new JSONObject();
         }
-        System.out.println("Id de usuario a pagar"+usarioPagarGlobal);
-        System.out.println("ide de proyecto de usuario a pagar"+idProyectoGlobal);
+        Response.ResponseBuilder constructor = Response.ok(objeto.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    @GET
+    @Path("pagarNomina")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response pagarNomina(@QueryParam("valorGanado") String valorGanado) throws ParseException {
+        DaoProyecto daoProyecto = new DaoProyecto();
+        DaoUsuario daoUsuario = new DaoUsuario();
+        DaoNomina daoNomina = new DaoNomina();
+
+        JSONObject objeto = null;
+        double valorGanadoRecibido = 0;
+        int semana = 0;
+        boolean bandera = false;
+        String actual = "";
+        try {
+            objeto = new JSONObject(valorGanado);
+            
+            valorGanadoRecibido = objeto.getDouble("valorGanado");
+            if((objeto.getString("valorGanado")).length()!=0){
+                bandera= true;
+            }
+        } catch (JSONException e) {
+            System.out.println(e);
+        }
+
+        BeanProyecto proyectoConsultado = daoProyecto.consultarProyectoporId(idProyectoGlobal);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fin = proyectoConsultado.getFinalProyecto();
+        java.util.Date fechaFin = sdf.parse(fin);
+        Calendar fecha = new GregorianCalendar();
+        int año = fecha.get(Calendar.YEAR);
+        int mes = fecha.get(Calendar.MONTH);
+        int dia = fecha.get(Calendar.DAY_OF_MONTH);
+        actual = "" + año + "-" + (mes + 1) + "-" + dia;
+        java.util.Date fechadateactual = sdf.parse(actual);
+
+        if (fechadateactual.before(fechaFin)) {
+            semana = ((daoProyecto.consultarDias(proyectoConsultado.getInicioProyecto())) / 7) + 1;
+        } else {
+            semana = 0;
+        }
+        if(bandera){
+        if ((daoNomina.consultarNomina(semana, usarioPagarGlobal)) == null) {
+            if (daoNomina.pagarNomina(usarioPagarGlobal, idProyectoGlobal, actual, semana, valorGanadoRecibido)) {
+                mensaje = "Se ha pagado la nómina correctamente";
+                tipo = "success";
+            } else {
+                mensaje = "No se pudo pagar la nómina";
+                tipo = "error";
+            }
+        } else {
+            mensaje = "Ya se pago esta nómina esta semana";            
+            tipo = "warning";
+        }
+        }else{
+             mensaje = "Debes ingresar un valor ganado";            
+            tipo = "warning";
+        }
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("tipo", tipo);
+        try {
+            objeto.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
         Response.ResponseBuilder constructor = Response.ok(objeto.toString());
         constructor.header("Access-Control-Allow-Origin", "*");
         constructor.header("Access-Control-Allow-Methods", "*");
@@ -707,9 +783,6 @@ public class ServicioGEPRO extends Application {
         return constructor.build();
     }
 
-    
-    
-    
     @GET
     @Path("mostrarActividades")
     @Produces(MediaType.APPLICATION_JSON)
@@ -739,7 +812,7 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
-    
+
     @GET
     @Path("consultarActividadId")
     @Produces(MediaType.APPLICATION_JSON)
@@ -758,5 +831,5 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
-    
+
 }
