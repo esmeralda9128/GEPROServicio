@@ -124,7 +124,7 @@ public class DaoRecursoMaterial {
             rs = psm.executeQuery();
             if (rs.next()) {
              recurso = new BeanRecursoMaterial();
-             recurso.setIdProyecto(rs.getInt("idRecursosMateriales"));
+             recurso.setIdRecuroMat(rs.getInt("idRecursosMateriales"));
              recurso.setNombreRecursoMat(rs.getString("nombre"));
              recurso.setCostoUnitario(rs.getDouble("costoUnitario"));
              recurso.setCantidad(rs.getInt("cantidad"));
