@@ -14,7 +14,13 @@ public class BeanActividad {
     private String actividad;
     private String descripcion;
     private String fechaActividad;
+    private int idUsuario;
 
+    public BeanActividad() {
+    }
+
+    
+    
     public int getIdActividad() {
         return idActividad;
     }
@@ -46,4 +52,14 @@ public class BeanActividad {
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
     }
+
+    public int getIdUsuario() {
+        return idUsuario;
+    }
+
+    public void setIdUsuario(int idUsuario) {
+        this.idUsuario = idUsuario;
+    }
+    
+    
 }

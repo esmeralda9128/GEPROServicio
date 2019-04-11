@@ -18,6 +18,7 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -27,10 +28,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import utez.edu.modelo.bean.BeanActividad;
+import utez.edu.modelo.bean.BeanNomina;
 import utez.edu.modelo.bean.BeanProyecto;
 import utez.edu.modelo.bean.BeanRecursoComprado;
 import utez.edu.modelo.bean.BeanRecursoMaterial;
 import utez.edu.modelo.bean.BeanUsuario;
+import utez.edu.modelo.dao.DaoActividades;
 import utez.edu.modelo.dao.DaoNomina;
 import utez.edu.modelo.dao.DaoProyecto;
 import utez.edu.modelo.dao.DaoRecursoMaterial;
@@ -903,6 +906,103 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
+    
+    /*Aqui vienen todos los métodos utilizados para la aplicacion móvil*/
+    @POST
+    @Path("consultaUsuarios")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response consultaUsuarios(BeanUsuario user) {
+        System.out.println("Entro al método del login");
+        BeanUsuario usuario = null;
+        DaoUsuario daoUsuario = null;
+        JSONObject objeto = null;
+        try {
+            daoUsuario = new DaoUsuario();
+            usuario = new BeanUsuario();
+            usuario = daoUsuario.cosultaLogin(user.getUsuario(), user.getPass());
+            System.out.println("Usuario->" + usuario);
+            objeto = new JSONObject();
+            objeto.put("usuarios", usuario);
+            System.out.println(objeto);
+        } catch (Exception e) {
+            System.out.println("Error en el método login");
+        }
+        Response.ResponseBuilder constructor = Response.ok(usuario);
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    @POST
+    @Path("consultaProyecto")
+    @Produces(MediaType.APPLICATION_JSON)
+
+    public Response consultaProyecto(BeanUsuario user) {
+        System.out.println("Entro al método de consultar proyecto");
+        BeanProyecto proyecto = null;
+        DaoProyecto dao = null;
+        JSONObject objeto = null;
+        try {
+            dao = new DaoProyecto();
+            proyecto = new BeanProyecto();
+            proyecto = dao.consultarProyectoporId(user.getIdProyecto());
+            System.out.println("Proyecto->" + proyecto);
+
+            System.out.println(proyecto);
+        } catch (Exception e) {
+            System.out.println("Error en el método login");
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyecto);
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+    @POST
+    @Path("registroActividad")
+    public Response registroActividad(BeanActividad actividad) {
+        System.out.println("Entro al método del registro de actividad");
+        BeanUsuario usuario = null;
+        DaoActividades dao = null;
+        JSONObject objeto = null;
+        Integer registro=0;
+        try {
+            dao=new DaoActividades();
+            
+            registro=dao.registroActividad(actividad);
+          
+        } catch (Exception e) {
+            System.out.println("Error en el método registrar actividad");
+        }
+        Response.ResponseBuilder constructor = Response.ok(registro);
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+    @POST
+    @Path("consultaNominas")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response consultaNominas(BeanUsuario usuario) {
+        System.out.println("Entro al método de consultas de nomina");
+        List<BeanNomina>nominas= new ArrayList<>();
+        JSONObject  objeto = null;
+        DaoNomina daoNomina = null;
+        try {
+            daoNomina= new DaoNomina();
+            nominas=daoNomina.consultaNomina(usuario);
+            objeto= new JSONObject();
+            objeto.put("nominas",nominas);
+            for (int i = 0; i < nominas.size(); i++) {
+                System.out.println(nominas.get(i).getIdUsuario());
+            }
+        } catch (Exception e) {
+            System.out.println("Error en el método registrar actividad");
+        }
+        Response.ResponseBuilder constructor = Response.ok(objeto.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
 
     @GET
     @Path("variacionCronogramaLider")

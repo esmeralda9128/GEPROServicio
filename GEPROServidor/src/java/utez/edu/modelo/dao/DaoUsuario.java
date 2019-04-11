@@ -476,5 +476,50 @@ public class DaoUsuario {
         }
         return misActividades;
    }
+   private String sqlConsultaLogin=("select * from usuario where usuario=? and pass=?");
+    public BeanUsuario cosultaLogin(String usuario,String pass){
+        BeanUsuario user= new BeanUsuario();
+        try {
+            con=Conexion.getConexion();
+            psm=con.prepareStatement(sqlConsultaLogin);
+            psm.setString(1, usuario);
+            psm.setString(2,pass);
+            rs=psm.executeQuery();
+            while (rs.next()) {                
+                user.setId(rs.getInt("idUsuario"));
+                user.setNombre(rs.getString("nombre"));
+                user.setPrimerApellido(rs.getString("primerApellido"));
+                user.setSegundoApellido(rs.getString("segundoApellido"));
+                user.setUsuario(rs.getString("usuario"));
+                user.setPass(rs.getString("pass"));
+                user.setRol(rs.getString("rol"));
+                user.setSalario(rs.getDouble("salario"));
+                user.setGradoEstudios(rs.getString("gradoEstudios"));
+                user.setCarrera(rs.getString("carrera"));
+                user.setRfc(rs.getString("rfc"));
+                user.setEmail(rs.getString("email"));
+                user.setIdProyecto(rs.getInt("idProyecto"));
+                user.setTipo(rs.getInt("tipo"));
+                System.out.println("Dao Usuario ->"+user.toString());
+            }
+        } catch (Exception e) {
+            System.out.println("Error en la consulta del usuario ->"+e.getMessage());
+        }finally{
+            try {
+                if (con==null) {
+                    con.close();
+                }
+                if (rs==null) {
+                    rs.close();
+                }
+                if (psm==null) {
+                    psm.close();
+                }
+            } catch (Exception e) {
+                System.out.println("Error al cerrar la conexion ->"+e.getMessage());
+            }
+        }   
+        return user;
+    }
 
 }
