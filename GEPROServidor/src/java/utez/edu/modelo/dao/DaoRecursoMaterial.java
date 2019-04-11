@@ -17,7 +17,8 @@ import utez.edu.mx.utilerias.Conexion;
 
 /**
  *
- * @author horo_
+ * @author Esmeralda 
+ * @version 1 15/03/2019
  */
 public class DaoRecursoMaterial {
 
@@ -27,7 +28,11 @@ public class DaoRecursoMaterial {
     private Connection con;
     private CallableStatement csm;
     private boolean resultado;
-
+/**
+ * Método que regresa todos los recursos de un proyecto 
+ * @param idProyecto el id del proyecto del que se necesita la información
+ * @return regresa la lista de los recursos materiales del proyecto
+ */
     public List<BeanRecursoMaterial> listaRecursos(int idProyecto){
         List<BeanRecursoMaterial> recursos = new ArrayList<>();
         BeanRecursoMaterial recurso;
@@ -59,7 +64,12 @@ public class DaoRecursoMaterial {
         }
         return recursos;
     }
-
+/**
+ * Método para registrar un recursos material
+ * @param recurso la información del recurso a registrar
+ * @param idProyecto el proyecto al que se le va a registrar el proyecto
+ * @return regresa un boolean ya sea si se hizo o no el registro
+ */
     public boolean registrarRecursoMaterial(BeanRecursoMaterial recurso, int idProyecto) {
         try {
             con = Conexion.getConexion();
@@ -83,7 +93,12 @@ public class DaoRecursoMaterial {
         }
         return resultado;
     }
-
+/**
+ * Método para ver si un recurso esta repetido 
+ * @param recurso el recurso a consultar
+ * @param idProyecto el id del proyecto donde se quiere saber si esta repetido
+ * @return regresa el recurso material encontrado
+ */
     public BeanRecursoMaterial consultarRecursoRepetido(BeanRecursoMaterial recurso, int idProyecto) {
         BeanRecursoMaterial recursoConsultado = null;
         try {
@@ -113,7 +128,11 @@ public class DaoRecursoMaterial {
         return recursoConsultado;
     }
     
-    
+    /**
+     * Método para buscar si un recurso ya ha sido comprado
+     * @param id el id del recursos material
+     * @return regresa el material encontrado
+     */
     public BeanRecursoMaterial buscarRecursoComprado(int id){
 
         BeanRecursoMaterial recurso = null;
