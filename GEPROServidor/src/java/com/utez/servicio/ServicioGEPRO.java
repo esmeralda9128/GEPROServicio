@@ -638,7 +638,6 @@ public class ServicioGEPRO extends Application {
         return constructor.build();
     }
 
-
     /**
      * ************ Aquí hice weas yo ***************
      */
@@ -701,6 +700,7 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
+
     @GET
     @Path("usuarioPagar")
     @Produces(MediaType.APPLICATION_JSON)
@@ -743,10 +743,10 @@ public class ServicioGEPRO extends Application {
         String actual = "";
         try {
             objeto = new JSONObject(valorGanado);
-            
+
             valorGanadoRecibido = objeto.getDouble("valorGanado");
-            if((objeto.getString("valorGanado")).length()!=0){
-                bandera= true;
+            if ((objeto.getString("valorGanado")).length() != 0) {
+                bandera = true;
             }
         } catch (JSONException e) {
             System.out.println(e);
@@ -768,21 +768,31 @@ public class ServicioGEPRO extends Application {
         } else {
             semana = 0;
         }
-        if(bandera){
-        if ((daoNomina.consultarNomina(semana, usarioPagarGlobal)) == null) {
-            if (daoNomina.pagarNomina(usarioPagarGlobal, idProyectoGlobal, actual, semana, valorGanadoRecibido)) {
-                mensaje = "Se ha pagado la nómina correctamente";
-                tipo = "success";
+        if (bandera) {
+            if ((daoNomina.consultarNomina(semana, usarioPagarGlobal)) == null) {
+                if (daoNomina.pagarNomina(usarioPagarGlobal, idProyectoGlobal, actual, semana, valorGanadoRecibido)) {
+                    int num = daoProyecto.contarRecursosHumanos(idProyectoGlobal);
+                    double valorGanadoSuma = daoNomina.sumaValorGanado(idProyectoGlobal, semana);
+                    double valorGanadoPorcentage = (valorGanadoSuma / num);
+                    double valorGanadoAsignar = ((proyectoConsultado.getPresupuestoInicial() * 26) / 100);
+                    if (daoProyecto.agregarValorGanado(idProyectoGlobal, valorGanadoAsignar)) {
+                        mensaje = "Se ha pagado la nómina correctamente";
+                        tipo = "success";
+                    }else{
+                        mensaje = "Ocurrio un error al asignar el valor ganado";
+                    tipo = "error";
+                    }
+
+                } else {
+                    mensaje = "No se pudo pagar la nómina";
+                    tipo = "error";
+                }
             } else {
-                mensaje = "No se pudo pagar la nómina";
-                tipo = "error";
+                mensaje = "Ya se pago esta nómina esta semana";
+                tipo = "warning";
             }
         } else {
-            mensaje = "Ya se pago esta nómina esta semana";            
-            tipo = "warning";
-        }
-        }else{
-             mensaje = "Debes ingresar un valor ganado";            
+            mensaje = "Debes ingresar un valor ganado";
             tipo = "warning";
         }
         respuestas.put("mensaje", mensaje);
