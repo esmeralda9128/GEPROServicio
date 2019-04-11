@@ -10,7 +10,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import utez.edu.modelo.bean.BeanNomina;
+import utez.edu.modelo.bean.BeanUsuario;
 import utez.edu.mx.utilerias.Conexion;
 
 /**
@@ -135,6 +138,44 @@ public class DaoNomina {
         }
         return suma;
     }
+     private String sqlConsultaNomina=("select * from nomina where idUsuario=?");
+      public List<BeanNomina> consultaNomina(BeanUsuario usuario){
+          List<BeanNomina> nominas = new ArrayList<>();
+          try {
+            con = Conexion.getConexion();
+            psm = con.prepareStatement(sqlConsultaNomina);
+            psm.setInt(1, usuario.getId());
+            rs = psm.executeQuery();
+            while (rs.next()) {
+                BeanNomina nomina = new BeanNomina();
+                nomina.setIdNomina(rs.getInt("idNomina"));
+                nomina.setFecha(rs.getString("fecha"));
+                nomina.setIdUsuario(rs.getInt("idUsuario"));
+                nomina.setIdProyecto(rs.getInt("idProyecto"));
+                nomina.setValorGanado(rs.getFloat("valorGanado"));
+                nominas.add(nomina);
+            }
+
+            System.out.println("-> " + nominas);
+        } catch (Exception e) {
+            System.err.println("Error -> " + e.getMessage());
+        } finally {
+            try {
+                if (con != null) {
+                    con.close();
+                }
+                if (psm != null) {
+                    psm.close();
+                }
+                if (rs != null) {
+                    rs.close();
+                }
+            } catch (Exception e) {
+                System.err.println("Error al cerrar conexion -> " + e.getMessage());
+            }
+        }
+          return nominas;
+      }
 
     public static void main(String[] args) {
         DaoNomina daoNomina = new DaoNomina();
