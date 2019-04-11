@@ -305,10 +305,65 @@ public class DaoProyecto {
                 diasDiferencia = rs.getInt("dias");
             }
         } catch (SQLException ex) {
-
+            System.out.println("Error en DaoProyecto consultarDias()"+ex);
+        }finally{
+            try{
+                con.close();
+                csm.close();
+                rs.close();
+            }catch(SQLException ex){
+                System.out.println("Error en DaoProyecto consultarDias()-cierre"+ex);
+            }
         }
 
         return diasDiferencia;
+    }
+    
+    /***
+     * Método para contrar cuantos recursos humanos estan involucrados en un determinado proyecto
+     * @param idProyecto es el id del proyecto del que nos interesa saber sus recursos
+     * @return un entero que es el número de cuantos recursos humanos estan involucrados
+     */
+    public int contarRecursosHumanos(int idProyecto){
+        int suma=0;
+        try{
+            con = Conexion.getConexion();
+            psm = con.prepareCall("select COUNT(idUsuario)as RecursoHumano from usuario where idProyecto=? and tipo=3");
+            psm.setInt(1, suma);
+            rs = psm.executeQuery();
+            if(rs.next()){
+                suma = rs.getInt("RecursoHumano");
+            }
+            
+        }catch(SQLException ex){
+            System.out.println("Error DaoProyecto contarRecursosHumanos()"+ex);
+        }finally{
+            try{
+                con.close();
+                psm.close();
+                rs.close();                        
+            }catch(SQLException ex){
+               System.out.println("Error DaoProyecto contarRecursosHumanos()-cierre"+ex); 
+            }
+        }
+        return suma;
+    }
+    
+    /**
+     * Método para asignar el valor ganado a un proyecto
+     * @param idProyecto
+     * @return 
+     */
+    
+    public boolean agregarValorGanado(int idProyecto){
+        try{
+            con = Conexion.getConexion();
+            
+        }catch(SQLException ex){
+            
+        }
+        
+        return resultado;
     }
   
  
