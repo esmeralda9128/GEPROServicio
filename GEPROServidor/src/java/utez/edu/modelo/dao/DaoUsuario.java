@@ -234,10 +234,10 @@ public class DaoUsuario {
     }
 
     /**
-     *
-     * @param usuario
-     * @param idProyecto
-     * @return
+     *Método para consultar el perfil de un líder de proyecto
+     * @param usuario el usuario del líder de proyecto
+     * @param idProyecto es el id del proyecto al que pertenece
+     * @return regresa el usuario encontrado
      */
     public BeanUsuario consultarPerfildeUsuario(String usuario, int idProyecto) {
         BeanUsuario usuarioConsultado = null;
@@ -281,9 +281,9 @@ public class DaoUsuario {
     }
 
     /**
-     *
-     * @param idProyecto
-     * @return
+     * Método para regresa todos los recurso humanos de un proyecto
+     * @param idProyecto el id del proyecto en cuestión
+     * @return regresa la lista de los recursos humanos
      */
     public List<BeanUsuario> consultarRescursos(int idProyecto) {
         List<BeanUsuario> recursos = new ArrayList();
@@ -324,21 +324,13 @@ public class DaoUsuario {
         return recursos;
     }
 
-    /**
-     * Método para modificar la información personal del Administrador
-     *
-     * @param administrador es la información a modificar del Administrador
-     * @
-     *
-     * return retornar un booleano es decir si se hizo la actulización o no
-     *
-     */
+
     /**
      * Método para insertar un nuevo recurso humano
      *
-     * @param beanUsuario
-     * @param idProyecto
-     * @return
+     * @param beanUsuario la información del recurso humano
+     * @param idProyecto id del proyecto al que se le va a ingresar el recurso
+     * @return regresa un booleao de si se registro el recurso o no
      */
     public boolean registrarRecursoHumano(BeanUsuario beanUsuario, int idProyecto) {
         try {
@@ -365,9 +357,9 @@ public class DaoUsuario {
     }
 
     /**
-     *
-     * @param beanUsuario
-     * @return
+     *Método para saber si ya se ha registrado el recurso en otro proyecto
+     * @param beanUsuario el información del recurso humano a consultar
+     * @return regresa el recurso humano encontrado
      */
     public BeanUsuario consultarUsuariosRepetidos(BeanUsuario beanUsuario) {
         BeanUsuario usuarioConsultado = null;
@@ -409,10 +401,11 @@ public class DaoUsuario {
 
         return usuarioConsultado;
     }
-   /**
-    * 
-    * @return 
-    */
+  /***
+   * Método para ver todos los recursos humanos de un proyecto
+   * @param idProyecto el id del proyecto del que deseamos la información
+   * @return regresa la lista de recursos
+   */
    public List<BeanUsuario> consultarUsuarios3(int idProyecto){
        List<BeanUsuario> usuarios = new ArrayList<>();
        BeanUsuario usuarioConsultado = null;

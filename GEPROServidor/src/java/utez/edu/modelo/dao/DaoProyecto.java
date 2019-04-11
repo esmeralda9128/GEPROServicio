@@ -259,6 +259,11 @@ public class DaoProyecto {
 
         return proyectoConsultado;
     }
+    /**
+     * Métado para calcular todo lo que se ha gastado del proyecto
+     * @param id el id del proyecto a escatar información
+     * @return regresa la cantidad gastada en el presuspuesto de recursos materiales y recursos humanos
+     */
 
     public double consultarPresupuestoGastado(int id) {
         double presupuestoGastado = 0;
