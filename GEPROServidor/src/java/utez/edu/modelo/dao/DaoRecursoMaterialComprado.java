@@ -63,9 +63,9 @@ public class DaoRecursoMaterialComprado {
     
     /**
      * Método para buscar buscar si un recurso se compro en determinada semana
-     * @param idRecurso
-     * @param semana
-     * @return 
+     * @param idRecurso el id del recurso comprado
+     * @param semana la semana de las que nos interesa saber si se ha comprado
+     * @return regresa el recurso comprado si lo encontro
      */
     public BeanRecursoComprado buscarRecursoComprado(int idRecurso, int semana){
        BeanRecursoComprado recurso =null;
@@ -99,6 +99,14 @@ public class DaoRecursoMaterialComprado {
         }
         return recurso;
     }
+    /**
+     * Método para comprar un recurso material
+     * @param idProyecto es el id de proyecto que en donde se va a comprar el recurso
+     * @param idMateral es el id del recurso material a comprar
+     * @param fecha es la fecha en la que se compro el recurso
+     * @param semana es la semana a la que pertenece
+     * @return se regresa un booleano de si se realizo el registro o no
+     */
     
     public boolean comprarRecursoMaterial(int idProyecto, int idMateral,String fecha,int semana){
         try{

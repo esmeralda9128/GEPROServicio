@@ -1,4 +1,3 @@
-
 package utez.edu.modelo.dao;
 
 import java.sql.CallableStatement;
@@ -11,7 +10,6 @@ import java.util.List;
 import utez.edu.modelo.bean.BeanProyecto;
 import utez.edu.modelo.bean.BeanUsuario;
 import utez.edu.mx.utilerias.Conexion;
-
 
 /**
  * Esta clase se utiliza para hacer métodos entre la aplicación y la base de
@@ -222,6 +220,7 @@ public class DaoProyecto {
 
     /**
      * Método para buscar un proyecto por su id
+     *
      * @param id es el id del proyecto que se quiere consultar
      * @return regresa el proyecto enconrado
      */
@@ -260,40 +259,43 @@ public class DaoProyecto {
 
         return proyectoConsultado;
     }
-    
-    public double consultarPresupuestoGastado(int id){
-        double presupuestoGastado =0;
-        try{
+    /**
+     * Métado para calcular todo lo que se ha gastado del proyecto
+     * @param id el id del proyecto a escatar información
+     * @return regresa la cantidad gastada en el presuspuesto de recursos materiales y recursos humanos
+     */
+
+    public double consultarPresupuestoGastado(int id) {
+        double presupuestoGastado = 0;
+        try {
             con = Conexion.getConexion();
             csm = con.prepareCall("{call dbo.pa_calcularCostoReal (?)}");
             csm.setInt(1, id);
             rs = csm.executeQuery();
-            if(rs.next()){
+            if (rs.next()) {
                 presupuestoGastado = (rs.getDouble("CostoReal"));
             }
-        }catch(SQLException ex){
+        } catch (SQLException ex) {
             System.out.println("Error DaoProyecto consultarPresupuestoGastado()" + ex);
-        }finally{
-            try{
+        } finally {
+            try {
                 con.close();
                 csm.close();
-                rs.close();                
-            }catch(SQLException e){
+                rs.close();
+            } catch (SQLException e) {
                 System.out.println("Error DaoProyecto consultarPresupuestoGastado()-ciere" + e);
             }
         }
         return presupuestoGastado;
     }
-    
-    
-    
+
     /**
-     * Método para ver la diferencia entre la fecha de inicio y la fecha actual y saber cuantas
-     * semanas han pasado 
+     * Método para ver la diferencia entre la fecha de inicio y la fecha actual
+     * y saber cuantas semanas han pasado
+     *
      * @param fecha se refiere a la fecha acutal
      * @return regresa los días de diferencia
      */
-
     public int consultarDias(String fecha) {
         int diasDiferencia = 0;
         try {
@@ -305,66 +307,87 @@ public class DaoProyecto {
                 diasDiferencia = rs.getInt("dias");
             }
         } catch (SQLException ex) {
-            System.out.println("Error en DaoProyecto consultarDias()"+ex);
-        }finally{
-            try{
+            System.out.println("Error en DaoProyecto consultarDias()" + ex);
+        } finally {
+            try {
                 con.close();
                 csm.close();
                 rs.close();
-            }catch(SQLException ex){
-                System.out.println("Error en DaoProyecto consultarDias()-cierre"+ex);
+            } catch (SQLException ex) {
+                System.out.println("Error en DaoProyecto consultarDias()-cierre" + ex);
             }
         }
 
         return diasDiferencia;
     }
-    
-    /***
-     * Método para contrar cuantos recursos humanos estan involucrados en un determinado proyecto
-     * @param idProyecto es el id del proyecto del que nos interesa saber sus recursos
-     * @return un entero que es el número de cuantos recursos humanos estan involucrados
+
+    /**
+     * *
+     * Método para contrar cuantos recursos humanos estan involucrados en un
+     * determinado proyecto
+     *
+     * @param idProyecto es el id del proyecto del que nos interesa saber sus
+     * recursos
+     * @return un entero que es el número de cuantos recursos humanos estan
+     * involucrados
      */
-    public int contarRecursosHumanos(int idProyecto){
-        int suma=0;
-        try{
+    public int contarRecursosHumanos(int idProyecto) {
+        int suma = 0;
+        try {
             con = Conexion.getConexion();
             psm = con.prepareCall("select COUNT(idUsuario)as RecursoHumano from usuario where idProyecto=? and tipo=3");
             psm.setInt(1, suma);
             rs = psm.executeQuery();
-            if(rs.next()){
+            if (rs.next()) {
                 suma = rs.getInt("RecursoHumano");
             }
-            
-        }catch(SQLException ex){
-            System.out.println("Error DaoProyecto contarRecursosHumanos()"+ex);
-        }finally{
-            try{
+
+        } catch (SQLException ex) {
+            System.out.println("Error DaoProyecto contarRecursosHumanos()" + ex);
+        } finally {
+            try {
                 con.close();
                 psm.close();
-                rs.close();                        
-            }catch(SQLException ex){
-               System.out.println("Error DaoProyecto contarRecursosHumanos()-cierre"+ex); 
+                rs.close();
+            } catch (SQLException ex) {
+                System.out.println("Error DaoProyecto contarRecursosHumanos()-cierre" + ex);
             }
         }
         return suma;
     }
-    
+
     /**
      * Método para asignar el valor ganado a un proyecto
-     * @param idProyecto
-     * @return 
+     *
+     * @param idProyecto el id del proyecto donde se va a actualizar el valor
+     * agregado
+     * @return regresa un booleano si se pudo hacer o no
      */
-    
-    public boolean agregarValorGanado(int idProyecto){
-        try{
+    public boolean agregarValorGanado(int idProyecto, double valorGanado) {
+        try {
             con = Conexion.getConexion();
-            
-        }catch(SQLException ex){
-            
+            psm = con.prepareStatement("update proyecto set valorGanado=? where idProyecto=?");
+            psm.setDouble(1, valorGanado);
+            psm.setInt(2, idProyecto);
+            resultado = psm.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            System.out.println("Error en DaoProyecto agregarValorGanado()" + ex);
+        } finally {
+            try {
+                con.close();
+                psm.close();
+            } catch (SQLException ex) {
+                System.out.println("Error en DaoProyecto agregarValorGanado()-cierre" + ex);
+            }
         }
-        
+
         return resultado;
     }
-  
- 
+
+    public static void main(String[] args) {
+        DaoProyecto daoProyecto = new DaoProyecto();
+        System.out.println(daoProyecto.agregarValorGanado(1, 26));
+
+    }
+
 }

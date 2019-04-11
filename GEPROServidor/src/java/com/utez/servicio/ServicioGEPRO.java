@@ -104,7 +104,7 @@ public class ServicioGEPRO extends Application {
         java.util.Date fechadateactual = sdf.parse(actual);
         if (bandera) {
             if (conpass.equals(beanUsuario.getPass())) {
-                if (fechadateactual.before(fechaInicio)) {
+//                if (fechadateactual.before(fechaInicio)) {
                     if (beanProyecto.getPresupuestoInicial() > beanUsuario.getSalario()) {
                         if (daoProyecto.verificarNombredeLider(beanUsuario) == null) {
                             if (daoProyecto.verificarNombredeProyecto(beanProyecto) == null) {
@@ -129,10 +129,10 @@ public class ServicioGEPRO extends Application {
                         tipo = "error";
                     }
 
-                } else {
-                    mensaje = "No puedes iniciar un proyecto antes de la fecha actual";
-                    tipo = "error";
-                }
+//                } else {
+//                    mensaje = "No puedes iniciar un proyecto antes de la fecha actual";
+//                    tipo = "error";
+//                }
             } else {
                 mensaje = "Las contraseñas no coinciden";
                 tipo = "error";
@@ -641,7 +641,6 @@ public class ServicioGEPRO extends Application {
         return constructor.build();
     }
 
-
     /**
      * ************ Aquí hice weas yo ***************
      */
@@ -704,6 +703,7 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
+
     @GET
     @Path("usuarioPagar")
     @Produces(MediaType.APPLICATION_JSON)
@@ -746,10 +746,10 @@ public class ServicioGEPRO extends Application {
         String actual = "";
         try {
             objeto = new JSONObject(valorGanado);
-            
+
             valorGanadoRecibido = objeto.getDouble("valorGanado");
-            if((objeto.getString("valorGanado")).length()!=0){
-                bandera= true;
+            if ((objeto.getString("valorGanado")).length() != 0) {
+                bandera = true;
             }
         } catch (JSONException e) {
             System.out.println(e);
@@ -771,21 +771,31 @@ public class ServicioGEPRO extends Application {
         } else {
             semana = 0;
         }
-        if(bandera){
-        if ((daoNomina.consultarNomina(semana, usarioPagarGlobal)) == null) {
-            if (daoNomina.pagarNomina(usarioPagarGlobal, idProyectoGlobal, actual, semana, valorGanadoRecibido)) {
-                mensaje = "Se ha pagado la nómina correctamente";
-                tipo = "success";
+        if (bandera) {
+            if ((daoNomina.consultarNomina(semana, usarioPagarGlobal)) == null) {
+                if (daoNomina.pagarNomina(usarioPagarGlobal, idProyectoGlobal, actual, semana, valorGanadoRecibido)) {
+                    int num = daoProyecto.contarRecursosHumanos(idProyectoGlobal);
+                    double valorGanadoSuma = daoNomina.sumaValorGanado(idProyectoGlobal, semana);
+                    double valorGanadoPorcentage = (valorGanadoSuma / num);
+                    double valorGanadoAsignar = ((proyectoConsultado.getPresupuestoInicial() * 26) / 100);
+                    if (daoProyecto.agregarValorGanado(idProyectoGlobal, valorGanadoAsignar)) {
+                        mensaje = "Se ha pagado la nómina correctamente";
+                        tipo = "success";
+                    } else {
+                        mensaje = "Ocurrio un error al asignar el valor ganado";
+                        tipo = "error";
+                    }
+
+                } else {
+                    mensaje = "No se pudo pagar la nómina";
+                    tipo = "error";
+                }
             } else {
-                mensaje = "No se pudo pagar la nómina";
-                tipo = "error";
+                mensaje = "Ya se pago esta nómina esta semana";
+                tipo = "warning";
             }
         } else {
-            mensaje = "Ya se pago esta nómina esta semana";            
-            tipo = "warning";
-        }
-        }else{
-             mensaje = "Debes ingresar un valor ganado";            
+            mensaje = "Debes ingresar un valor ganado";
             tipo = "warning";
         }
         respuestas.put("mensaje", mensaje);
@@ -995,4 +1005,108 @@ public class ServicioGEPRO extends Application {
     }
 
 
+    @GET
+    @Path("variacionCronogramaLider")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response variacionCronogramaLider(@QueryParam("idProyecto") String idProyecto) {
+        JSONObject proyectoJ = null;
+        DaoProyecto daoProyecto = new DaoProyecto();
+        BeanProyecto proyectoConsultado = null;
+        String mensaje2="";
+        int idProyectoConsultado=0;
+        try {
+            proyectoJ = new JSONObject(idProyecto);
+            idProyectoConsultado = proyectoJ.getInt("proyecto");
+           
+        } catch (JSONException ex) {
+            System.out.println("Error" + ex);
+        }
+        
+        proyectoConsultado= daoProyecto.consultarProyectoporId(idProyectoConsultado);
+        double valoraCalcular = proyectoConsultado.getValorPlaneado()-proyectoConsultado.getValorGanado();
+        if(valoraCalcular==0){
+            mensaje="De acuerdo a lo planeado";
+            mensaje2="Vas bien de tiempo";
+            tipo="info"; 
+        }else if(valoraCalcular>0){
+            mensaje="Mejor que lo planeado";
+            mensaje2="Vas adelantado";
+            tipo="success";
+        }else{
+             mensaje="No se estan cumpliendo los objetivos";
+            mensaje2="Vas con retraso de acuerdo a lo planeado";
+            tipo="warning";
+        }
+        
+        
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("mensaje2", mensaje2);
+        respuestas.put("tipo", tipo);
+        try {
+            proyectoJ.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyectoJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+    
+    
+    @GET
+    @Path("variaciondelCostoLider")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response variaciondelCostoLider(@QueryParam("idProyecto") String idProyecto) {
+        JSONObject proyectoJ = null;
+        DaoProyecto daoProyecto = new DaoProyecto();
+        BeanProyecto proyectoConsultado = null;
+        String mensaje2="";
+        int idProyectoConsultado=0;
+        try {
+            proyectoJ = new JSONObject(idProyecto);
+            idProyectoConsultado = proyectoJ.getInt("proyecto");
+           
+        } catch (JSONException ex) {
+            System.out.println("Error" + ex);
+        }
+        
+        proyectoConsultado= daoProyecto.consultarProyectoporId(idProyectoConsultado);
+        double valoraCalcular = proyectoConsultado.getValorPlaneado()-daoProyecto.consultarPresupuestoGastado(idProyectoConsultado);
+        System.out.println("El valor a calcular en variaciondelCostoLider es "+valoraCalcular);
+        System.out.println("El valor a pleado en variaciondelCostoLider es "+proyectoConsultado.getValorPlaneado());
+        System.out.println("El valor ganado en variaciondelCostoLider es "+ daoProyecto.consultarPresupuestoGastado(idProyectoConsultado));
+        
+        if(valoraCalcular==0){
+            mensaje="De acuerdo a lo planeado";
+            mensaje2="El proyecto va de acuerdo";
+            tipo="info"; 
+        }else if(valoraCalcular>0){
+            mensaje="Mejor que lo planeado";
+            mensaje2="El proyecto esta siendo más barato a lo planeado";
+            tipo="success";
+        }else{
+             mensaje="No se estan cumpliendo los objetivos";
+            mensaje2="El proyecto esta siendo más caro a lo planeado";
+            tipo="warning";
+        }
+        
+        
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("mensaje2", mensaje2);
+        respuestas.put("tipo", tipo);
+        try {
+            proyectoJ.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyectoJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
 }
