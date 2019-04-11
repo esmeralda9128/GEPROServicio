@@ -122,10 +122,5 @@ public class DaoRecursoMaterialComprado {
         return resultado;
     }
     
-    public static void main(String[] args) {     
-     DaoRecursoMaterialComprado comprado = new DaoRecursoMaterialComprado();
-       BeanRecursoComprado  recurso = comprado.buscarRecursoComprado(1, 0);
-        System.out.println(recurso.getMateriales().getNombreRecursoMat());
-    }
-
+ 
 }
