@@ -617,20 +617,26 @@ public class ServicioGEPRO extends Application {
         System.out.println("materiales tamaño" + materialesGlobal.size());
         System.out.println("id de proyecto" + idProyectoGlobal);
         BeanProyecto proyecto = daoProyecto.consultarProyectoporId(idProyectoGlobal);
+       
         if (proyecto.getPresupustoActual() > totalGlobal) {
             for (int i = 0; i < materialesGlobal.size(); i++) {
                 if (daoComprado.comprarRecursoMaterial(idProyectoGlobal, materialesGlobal.get(i).getIdRecuroMat(), fechaGlobal, semanaGlobal)) {
                     mensaje = "Se han comprado los materiales correctamente";
                     tipo = "success";
                 } else {
-                    mensaje = "No se compraron los materiales apartir del material " + materialesGlobal.get(i).getNombreRecursoMat();
+                    mensaje = "No se compraron los materiales a partir del material " + materialesGlobal.get(i).getNombreRecursoMat();
                     tipo = "error";
                     break;
                 }
             }
         }
+        double gastado = daoProyecto.consultarPresupuestoGastado(idProyectoGlobal);
+        
+        
         respuestas.put("mensaje", mensaje);
         respuestas.put("tipo", tipo);
+        respuestas.put("gastado", gastado);
+        respuestas.put("proyecto", proyecto);
         try {
             objeto.put("respuesta", respuestas);
 
@@ -774,10 +780,15 @@ public class ServicioGEPRO extends Application {
             if ((daoNomina.consultarNomina(semana, usarioPagarGlobal)) == null) {
                 if (daoNomina.pagarNomina(usarioPagarGlobal, idProyectoGlobal, actual, semana, valorGanadoRecibido)) {
                     int num = daoProyecto.contarRecursosHumanos(idProyectoGlobal);
+                    System.out.println("El contarRecursos "+num);
                     double valorGanadoSuma = daoNomina.sumaValorGanado(idProyectoGlobal, semana);
-                    double valorGanadoPorcentage = (valorGanadoSuma / num);
-                    double valorGanadoAsignar = ((proyectoConsultado.getPresupuestoInicial() * 26) / 100);
-                    if (daoProyecto.agregarValorGanado(idProyectoGlobal, valorGanadoAsignar)) {
+                    System.out.println("El valor ganado suma "+valorGanadoSuma);
+                    double valorGanadoPorcentaje = (valorGanadoSuma / num);
+                    System.out.println("Valor Ganado Porcentaje "+valorGanadoPorcentaje);
+                    double valorGanadoAsignar = ((proyectoConsultado.getPresupuestoInicial() * valorGanadoPorcentaje ) / 100);
+                   String valor= String.format("%.2f", valorGanadoAsignar);
+                    System.out.println("El valor ganado es"+valor);
+                    if (daoProyecto.agregarValorGanado(idProyectoGlobal, Double.parseDouble(valor))) {
                         mensaje = "Se ha pagado la nómina correctamente";
                         tipo = "success";
                     } else {
@@ -797,8 +808,12 @@ public class ServicioGEPRO extends Application {
             mensaje = "Debes ingresar un valor ganado";
             tipo = "warning";
         }
+         double gastado = daoProyecto.consultarPresupuestoGastado(idProyectoGlobal);
+         
         respuestas.put("mensaje", mensaje);
         respuestas.put("tipo", tipo);
+        respuestas.put("gastado", gastado);
+        respuestas.put("proyecto", proyectoConsultado);
         try {
             objeto.put("respuesta", respuestas);
 
