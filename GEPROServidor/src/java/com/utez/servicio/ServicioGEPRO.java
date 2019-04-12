@@ -102,8 +102,10 @@ public class ServicioGEPRO extends Application {
         int dia = fecha.get(Calendar.DAY_OF_MONTH);
         String actual = "" + año + "-" + (mes + 1) + "-" + dia;
         java.util.Date fechadateactual = sdf.parse(actual);
-        if (bandera) {
-            if (conpass.equals(beanUsuario.getPass())) {
+
+        if (beanProyecto.getPresupuestoInicial() > 0 && beanProyecto.getReserva() > 0 && beanUsuario.getSalario() > 0) {
+            if (bandera) {
+                if (conpass.equals(beanUsuario.getPass())) {
 //                if (fechadateactual.before(fechaInicio)) {
                     if (beanProyecto.getPresupuestoInicial() > beanUsuario.getSalario()) {
                         if (daoProyecto.verificarNombredeLider(beanUsuario) == null) {
@@ -133,10 +135,14 @@ public class ServicioGEPRO extends Application {
 //                    mensaje = "No puedes iniciar un proyecto antes de la fecha actual";
 //                    tipo = "error";
 //                }
-            } else {
-                mensaje = "Las contraseñas no coinciden";
-                tipo = "error";
+                } else {
+                    mensaje = "Las contraseñas no coinciden";
+                    tipo = "error";
+                }
             }
+        } else {
+            mensaje = "No puedes poner presupuestos o salarios en 0";
+            tipo = "error";
         }
 
         List<BeanProyecto> proyectos = daoProyecto.consultarProyectos();
@@ -187,6 +193,8 @@ public class ServicioGEPRO extends Application {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response elimiarProyecto(@QueryParam("proyecto") String proyecto) {
         DaoProyecto daoProyecto = new DaoProyecto();
+        DaoUsuario daoUsuario = new DaoUsuario();
+        DaoActividades daoActividades = new DaoActividades();
         int idProyecto = 0;
         JSONObject proyectoJ = null;
         try {
@@ -195,6 +203,14 @@ public class ServicioGEPRO extends Application {
         } catch (JSONException ex) {
             System.out.println("Error" + ex);
         }
+        List<BeanUsuario> usuarios = daoUsuario.consultarRescursos(idProyecto);
+        if (usuarios != null) {
+            for (int i = 0; i < usuarios.size(); i++) {
+                daoActividades.eliminarActvidades(usuarios.get(i).getId());
+            }
+
+        }
+
         if (daoProyecto.eliminarProyecto(idProyecto)) {
             mensaje = "Se ha eliminado el proyecto";
             tipo = "success";
@@ -358,6 +374,7 @@ public class ServicioGEPRO extends Application {
         List<BeanUsuario> recursosHumanos = daoUsuario.consultarRescursos(idProyecto);
         List<BeanRecursoMaterial> materialesProyecto = daoMaterial.listaRecursos(idProyecto);
         List<BeanRecursoMaterial> materialPorComprar = new ArrayList<>();
+        double gastado = daoProyecto.consultarPresupuestoGastado(idProyecto);
         respuestas.put("fecha", fechadateactual);
         respuestas.put("proyecto", proyectoConsultado);
         respuestas.put("lider", daoUsuario.consultarLiderdeProyecto(idProyecto));
@@ -367,6 +384,7 @@ public class ServicioGEPRO extends Application {
         respuestas.put("presuPuestoGastado", daoProyecto.consultarPresupuestoGastado(idProyecto));
         respuestas.put("valorPlaneado", valorPlaneado);
         respuestas.put("fecha", actual);
+        respuestas.put("gastado", gastado);
 
         try {
 
@@ -402,26 +420,29 @@ public class ServicioGEPRO extends Application {
         } catch (JSONException e) {
             System.out.println("Error" + e);
         }
-
-        if (conpass.equals(beanUsuario.getPass())) {
-            if (daoUsuario.consultarUsuariosRepetidos(beanUsuario) == null) {
-                registro = daoUsuario.registrarRecursoHumano(beanUsuario, idProyecto);
-                if (registro) {
-                    mensaje = "Se ha registrado correctamente el recurso";
-                    tipo = "success";
+        if (beanUsuario.getSalario() > 0) {
+            if (conpass.equals(beanUsuario.getPass())) {
+                if (daoUsuario.consultarUsuariosRepetidos(beanUsuario) == null) {
+                    registro = daoUsuario.registrarRecursoHumano(beanUsuario, idProyecto);
+                    if (registro) {
+                        mensaje = "Se ha registrado correctamente el recurso";
+                        tipo = "success";
+                    } else {
+                        mensaje = "No se pudo registrar el recurso";
+                        tipo = "error";
+                    }
                 } else {
-                    mensaje = "No se pudo registrar el recurso";
+                    mensaje = "Ese recurso ya esta registrado";
                     tipo = "error";
                 }
             } else {
-                mensaje = "Ese recurso ya esta registrado";
+                mensaje = "Las contraseñas no coinciden";
                 tipo = "error";
             }
         } else {
-            mensaje = "Las contraseñas no coinciden";
+            mensaje = "No puedes ingresar cantidades menor al 0 en el salario";
             tipo = "error";
         }
-
         respuestas.put("mensaje", mensaje);
         respuestas.put("tipo", tipo);
         respuestas.put("registro", registro);
@@ -457,21 +478,24 @@ public class ServicioGEPRO extends Application {
         } catch (JSONException e) {
             System.out.println("Error" + e);
         }
-
-        if (daoRecursoMaterial.consultarRecursoRepetido(beanRecursoMaterial, idProyectoGlobal) == null) {
-            registro = daoRecursoMaterial.registrarRecursoMaterial(beanRecursoMaterial, idProyectoGlobal);
-            if (registro) {
-                mensaje = "Se ha registrado correctamente el recurso";
-                tipo = "success";
+        if (beanRecursoMaterial.getCantidad() > 0 && beanRecursoMaterial.getCostoUnitario() > 0) {
+            if (daoRecursoMaterial.consultarRecursoRepetido(beanRecursoMaterial, idProyectoGlobal) == null) {
+                registro = daoRecursoMaterial.registrarRecursoMaterial(beanRecursoMaterial, idProyectoGlobal);
+                if (registro) {
+                    mensaje = "Se ha registrado correctamente el recurso";
+                    tipo = "success";
+                } else {
+                    mensaje = "No se pudo registrar el recurso";
+                    tipo = "error";
+                }
             } else {
-                mensaje = "No se pudo registrar el recurso";
+                mensaje = "Ese recurso ya esta registrado en el proyecto";
                 tipo = "error";
             }
         } else {
-            mensaje = "Ese recurso ya esta registrado en el proyecto";
+            mensaje = "No puedes registrar costos o cantidades en 0";
             tipo = "error";
         }
-
         respuestas.put("mensaje", mensaje);
         respuestas.put("tipo", tipo);
         respuestas.put("registro", registro);
@@ -615,20 +639,25 @@ public class ServicioGEPRO extends Application {
         System.out.println("materiales tamaño" + materialesGlobal.size());
         System.out.println("id de proyecto" + idProyectoGlobal);
         BeanProyecto proyecto = daoProyecto.consultarProyectoporId(idProyectoGlobal);
+
         if (proyecto.getPresupustoActual() > totalGlobal) {
             for (int i = 0; i < materialesGlobal.size(); i++) {
                 if (daoComprado.comprarRecursoMaterial(idProyectoGlobal, materialesGlobal.get(i).getIdRecuroMat(), fechaGlobal, semanaGlobal)) {
                     mensaje = "Se han comprado los materiales correctamente";
                     tipo = "success";
                 } else {
-                    mensaje = "No se compraron los materiales apartir del material " + materialesGlobal.get(i).getNombreRecursoMat();
+                    mensaje = "No se compraron los materiales a partir del material " + materialesGlobal.get(i).getNombreRecursoMat();
                     tipo = "error";
                     break;
                 }
             }
         }
+        double gastado = daoProyecto.consultarPresupuestoGastado(idProyectoGlobal);
+
         respuestas.put("mensaje", mensaje);
         respuestas.put("tipo", tipo);
+        respuestas.put("gastado", gastado);
+        respuestas.put("proyecto", proyecto);
         try {
             objeto.put("respuesta", respuestas);
 
@@ -641,9 +670,6 @@ public class ServicioGEPRO extends Application {
         return constructor.build();
     }
 
-    /**
-     * ************ Aquí hice weas yo ***************
-     */
     @GET
     @Path("actualizarPerfilAdmin")
     @Produces(MediaType.APPLICATION_JSON)
@@ -744,6 +770,7 @@ public class ServicioGEPRO extends Application {
         int semana = 0;
         boolean bandera = false;
         String actual = "";
+        boolean registro=false;
         try {
             objeto = new JSONObject(valorGanado);
 
@@ -771,35 +798,51 @@ public class ServicioGEPRO extends Application {
         } else {
             semana = 0;
         }
-        if (bandera) {
-            if ((daoNomina.consultarNomina(semana, usarioPagarGlobal)) == null) {
-                if (daoNomina.pagarNomina(usarioPagarGlobal, idProyectoGlobal, actual, semana, valorGanadoRecibido)) {
-                    int num = daoProyecto.contarRecursosHumanos(idProyectoGlobal);
-                    double valorGanadoSuma = daoNomina.sumaValorGanado(idProyectoGlobal, semana);
-                    double valorGanadoPorcentage = (valorGanadoSuma / num);
-                    double valorGanadoAsignar = ((proyectoConsultado.getPresupuestoInicial() * 26) / 100);
-                    if (daoProyecto.agregarValorGanado(idProyectoGlobal, valorGanadoAsignar)) {
-                        mensaje = "Se ha pagado la nómina correctamente";
-                        tipo = "success";
+        if (valorGanadoRecibido > 0 || valorGanadoRecibido == 0) {
+            if (bandera) {
+                if ((daoNomina.consultarNomina(semana, usarioPagarGlobal)) == null) {
+                    if (daoNomina.pagarNomina(usarioPagarGlobal, idProyectoGlobal, actual, semana, valorGanadoRecibido)) {
+                        int num = daoProyecto.contarRecursosHumanos(idProyectoGlobal);
+                        System.out.println("El contarRecursos " + num);
+                        double valorGanadoSuma = daoNomina.sumaValorGanado(idProyectoGlobal, semana);
+                        System.out.println("El valor ganado suma " + valorGanadoSuma);
+                        double valorGanadoPorcentaje = (valorGanadoSuma / num);
+                        System.out.println("Valor Ganado Porcentaje " + valorGanadoPorcentaje);
+                        double valorGanadoAsignar = ((proyectoConsultado.getPresupuestoInicial() * valorGanadoPorcentaje) / 100);
+                        String valor = String.format("%.2f", valorGanadoAsignar);
+                        System.out.println("El valor ganado es" + valor);
+                        if (daoProyecto.agregarValorGanado(idProyectoGlobal, Double.parseDouble(valor))) {
+                            mensaje = "Se ha pagado la nómina correctamente";
+                            tipo = "success";
+                            registro= true;
+                        } else {
+                            mensaje = "Ocurrio un error al asignar el valor ganado";
+                            tipo = "error";
+                        }
+
                     } else {
-                        mensaje = "Ocurrio un error al asignar el valor ganado";
+                        mensaje = "No se pudo pagar la nómina";
                         tipo = "error";
                     }
-
                 } else {
-                    mensaje = "No se pudo pagar la nómina";
-                    tipo = "error";
+                    mensaje = "Ya se pago esta nómina esta semana";
+                    tipo = "warning";
                 }
             } else {
-                mensaje = "Ya se pago esta nómina esta semana";
+                mensaje = "Debes ingresar un valor ganado";
                 tipo = "warning";
             }
         } else {
-            mensaje = "Debes ingresar un valor ganado";
-            tipo = "warning";
+            mensaje = "No puedes introducir números negativos en el valor ganado";
+            tipo = "error";
         }
+        double gastado = daoProyecto.consultarPresupuestoGastado(idProyectoGlobal);
+
         respuestas.put("mensaje", mensaje);
         respuestas.put("tipo", tipo);
+        respuestas.put("gastado", gastado);
+        respuestas.put("proyecto", proyectoConsultado);
+        respuestas.put("registro", registro);
         try {
             objeto.put("respuesta", respuestas);
 
@@ -907,7 +950,7 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
-    
+
     /*Aqui vienen todos los métodos utilizados para la aplicacion móvil*/
     @POST
     @Path("consultaUsuarios")
@@ -958,6 +1001,7 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
+
     @POST
     @Path("registroActividad")
     public Response registroActividad(BeanActividad actividad) {
@@ -965,12 +1009,12 @@ public class ServicioGEPRO extends Application {
         BeanUsuario usuario = null;
         DaoActividades dao = null;
         JSONObject objeto = null;
-        Integer registro=0;
+        Integer registro = 0;
         try {
-            dao=new DaoActividades();
-            
-            registro=dao.registroActividad(actividad);
-          
+            dao = new DaoActividades();
+
+            registro = dao.registroActividad(actividad);
+
         } catch (Exception e) {
             System.out.println("Error en el método registrar actividad");
         }
@@ -979,19 +1023,20 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
+
     @POST
     @Path("consultaNominas")
     @Produces(MediaType.APPLICATION_JSON)
     public Response consultaNominas(BeanUsuario usuario) {
         System.out.println("Entro al método de consultas de nomina");
-        List<BeanNomina>nominas= new ArrayList<>();
-        JSONObject  objeto = null;
+        List<BeanNomina> nominas = new ArrayList<>();
+        JSONObject objeto = null;
         DaoNomina daoNomina = null;
         try {
-            daoNomina= new DaoNomina();
-            nominas=daoNomina.consultaNomina(usuario);
-            objeto= new JSONObject();
-            objeto.put("nominas",nominas);
+            daoNomina = new DaoNomina();
+            nominas = daoNomina.consultaNomina(usuario);
+            objeto = new JSONObject();
+            objeto.put("nominas", nominas);
             for (int i = 0; i < nominas.size(); i++) {
                 System.out.println(nominas.get(i).getIdUsuario());
             }
@@ -1004,42 +1049,58 @@ public class ServicioGEPRO extends Application {
         return constructor.build();
     }
 
-
     @GET
     @Path("variacionCronogramaLider")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response variacionCronogramaLider(@QueryParam("idProyecto") String idProyecto) {
+    public Response variacionCronogramaLider(@QueryParam("idProyecto") String idProyecto) throws ParseException {
         JSONObject proyectoJ = null;
         DaoProyecto daoProyecto = new DaoProyecto();
         BeanProyecto proyectoConsultado = null;
-        String mensaje2="";
-        int idProyectoConsultado=0;
+        String mensaje2 = "";
+        String actual = "";
+        int semana = 0;
+        int idProyectoConsultado = 0;
         try {
             proyectoJ = new JSONObject(idProyecto);
             idProyectoConsultado = proyectoJ.getInt("proyecto");
-           
+
         } catch (JSONException ex) {
             System.out.println("Error" + ex);
         }
-        
-        proyectoConsultado= daoProyecto.consultarProyectoporId(idProyectoConsultado);
-        double valoraCalcular = proyectoConsultado.getValorPlaneado()-proyectoConsultado.getValorGanado();
-        if(valoraCalcular==0){
-            mensaje="De acuerdo a lo planeado";
-            mensaje2="Vas bien de tiempo";
-            tipo="info"; 
-        }else if(valoraCalcular>0){
-            mensaje="Mejor que lo planeado";
-            mensaje2="Vas adelantado";
-            tipo="success";
-        }else{
-             mensaje="No se estan cumpliendo los objetivos";
-            mensaje2="Vas con retraso de acuerdo a lo planeado";
-            tipo="warning";
+
+        proyectoConsultado = daoProyecto.consultarProyectoporId(idProyectoConsultado);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fin = proyectoConsultado.getFinalProyecto();
+        java.util.Date fechaFin = sdf.parse(fin);
+        Calendar fecha = new GregorianCalendar();
+        int año = fecha.get(Calendar.YEAR);
+        int mes = fecha.get(Calendar.MONTH);
+        int dia = fecha.get(Calendar.DAY_OF_MONTH);
+        actual = "" + año + "-" + (mes + 1) + "-" + dia;
+        java.util.Date fechadateactual = sdf.parse(actual);
+
+        if (fechadateactual.before(fechaFin)) {
+            semana = ((daoProyecto.consultarDias(proyectoConsultado.getInicioProyecto())) / 7) + 1;
+        } else {
+            semana = 0;
         }
-        
-        
+        double valoraCalcular = proyectoConsultado.getValorGanado() - (proyectoConsultado.getValorPlaneado() * semana);
+        System.out.println("Valor Calcular" + valoraCalcular);
+        if (valoraCalcular == 0) {
+            mensaje = "De acuerdo a lo planeado";
+            mensaje2 = "Vas bien de tiempo";
+            tipo = "info";
+        } else if (valoraCalcular > 0) {
+            mensaje = "Mejor que lo planeado";
+            mensaje2 = "Vas adelantado";
+            tipo = "success";
+        } else {
+            mensaje = "No se estan cumpliendo los objetivos";
+            mensaje2 = "Vas con retraso de acuerdo a lo planeado";
+            tipo = "warning";
+        }
+
         respuestas.put("mensaje", mensaje);
         respuestas.put("mensaje2", mensaje2);
         respuestas.put("tipo", tipo);
@@ -1054,47 +1115,60 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
-    
-    
+
     @GET
     @Path("variaciondelCostoLider")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response variaciondelCostoLider(@QueryParam("idProyecto") String idProyecto) {
+    public Response variaciondelCostoLider(@QueryParam("idProyecto") String idProyecto) throws ParseException {
         JSONObject proyectoJ = null;
         DaoProyecto daoProyecto = new DaoProyecto();
         BeanProyecto proyectoConsultado = null;
-        String mensaje2="";
-        int idProyectoConsultado=0;
+        String mensaje2 = "";
+        String actual = "";
+        int semana = 0;
+        int idProyectoConsultado = 0;
         try {
             proyectoJ = new JSONObject(idProyecto);
             idProyectoConsultado = proyectoJ.getInt("proyecto");
-           
+
         } catch (JSONException ex) {
             System.out.println("Error" + ex);
         }
-        
-        proyectoConsultado= daoProyecto.consultarProyectoporId(idProyectoConsultado);
-        double valoraCalcular = proyectoConsultado.getValorPlaneado()-daoProyecto.consultarPresupuestoGastado(idProyectoConsultado);
-        System.out.println("El valor a calcular en variaciondelCostoLider es "+valoraCalcular);
-        System.out.println("El valor a pleado en variaciondelCostoLider es "+proyectoConsultado.getValorPlaneado());
-        System.out.println("El valor ganado en variaciondelCostoLider es "+ daoProyecto.consultarPresupuestoGastado(idProyectoConsultado));
-        
-        if(valoraCalcular==0){
-            mensaje="De acuerdo a lo planeado";
-            mensaje2="El proyecto va de acuerdo";
-            tipo="info"; 
-        }else if(valoraCalcular>0){
-            mensaje="Mejor que lo planeado";
-            mensaje2="El proyecto esta siendo más barato a lo planeado";
-            tipo="success";
-        }else{
-             mensaje="No se estan cumpliendo los objetivos";
-            mensaje2="El proyecto esta siendo más caro a lo planeado";
-            tipo="warning";
+
+        proyectoConsultado = daoProyecto.consultarProyectoporId(idProyectoConsultado);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fin = proyectoConsultado.getFinalProyecto();
+        java.util.Date fechaFin = sdf.parse(fin);
+        Calendar fecha = new GregorianCalendar();
+        int año = fecha.get(Calendar.YEAR);
+        int mes = fecha.get(Calendar.MONTH);
+        int dia = fecha.get(Calendar.DAY_OF_MONTH);
+        actual = "" + año + "-" + (mes + 1) + "-" + dia;
+        java.util.Date fechadateactual = sdf.parse(actual);
+
+        if (fechadateactual.before(fechaFin)) {
+            semana = ((daoProyecto.consultarDias(proyectoConsultado.getInicioProyecto())) / 7) + 1;
+        } else {
+            semana = 0;
         }
-        
-        
+        double valoraCalcular = (proyectoConsultado.getValorPlaneado() * semana) - daoProyecto.consultarPresupuestoGastado(idProyectoConsultado);
+        System.out.println("Valor a " + valoraCalcular);
+
+        if (valoraCalcular == 0) {
+            mensaje = "De acuerdo a lo planeado";
+            mensaje2 = "El proyecto va de acuerdo";
+            tipo = "info";
+        } else if (valoraCalcular > 0) {
+            mensaje = "Mejor que lo planeado";
+            mensaje2 = "El proyecto esta siendo más barato a lo planeado";
+            tipo = "success";
+        } else {
+            mensaje = "No se estan cumpliendo los objetivos";
+            mensaje2 = "El proyecto esta siendo más caro a lo planeado";
+            tipo = "warning";
+        }
+
         respuestas.put("mensaje", mensaje);
         respuestas.put("mensaje2", mensaje2);
         respuestas.put("tipo", tipo);
@@ -1109,4 +1183,352 @@ public class ServicioGEPRO extends Application {
         constructor.header("Access-Control-Allow-Methods", "*");
         return constructor.build();
     }
+
+    @GET
+    @Path("desempeniodelCronogranaLider")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response desempeniodelCronogranaLider(@QueryParam("idProyecto") String idProyecto) throws ParseException {
+        JSONObject proyectoJ = null;
+        DaoProyecto daoProyecto = new DaoProyecto();
+        BeanProyecto proyectoConsultado = null;
+        String mensaje2 = "";
+        String actual = "";
+        int semana = 0;
+        int idProyectoConsultado = 0;
+        try {
+            proyectoJ = new JSONObject(idProyecto);
+            idProyectoConsultado = proyectoJ.getInt("proyecto");
+
+        } catch (JSONException ex) {
+            System.out.println("Error" + ex);
+        }
+        proyectoConsultado = daoProyecto.consultarProyectoporId(idProyectoConsultado);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fin = proyectoConsultado.getFinalProyecto();
+        java.util.Date fechaFin = sdf.parse(fin);
+        Calendar fecha = new GregorianCalendar();
+        int año = fecha.get(Calendar.YEAR);
+        int mes = fecha.get(Calendar.MONTH);
+        int dia = fecha.get(Calendar.DAY_OF_MONTH);
+        actual = "" + año + "-" + (mes + 1) + "-" + dia;
+        java.util.Date fechadateactual = sdf.parse(actual);
+        double valoraCalcular = daoProyecto.consultarPresupuestoGastado(idProyectoConsultado) / (proyectoConsultado.getValorPlaneado() * semana);
+        System.out.println("El valor a calcular en variaciondelCostoLider es " + valoraCalcular);
+        System.out.println("El valor a pleado en variaciondelCostoLider es " + proyectoConsultado.getValorPlaneado());
+        System.out.println("El valor ganado en variaciondelCostoLider es " + daoProyecto.consultarPresupuestoGastado(idProyectoConsultado));
+
+        if (valoraCalcular == 0) {
+            mensaje = "De acuerdo a lo planeado";
+            mensaje2 = "El trabajo va deacuerdo a lo planeado";
+            tipo = "info";
+        } else if (valoraCalcular > 0) {
+            mensaje = "Mejor que lo planeado";
+            mensaje2 = "El trabajo es mayor al planeado ";
+            tipo = "success";
+        } else {
+            mensaje = "El trabajo es menor que al planeado";
+            mensaje2 = "Vas a trasado";
+            tipo = "warning";
+        }
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("mensaje2", mensaje2);
+        respuestas.put("tipo", tipo);
+        try {
+            proyectoJ.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyectoJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    @GET
+    @Path("desempeniodelCostoLider")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response desempeniodelCostoLider(@QueryParam("idProyecto") String idProyecto) throws ParseException {
+        JSONObject proyectoJ = null;
+        DaoProyecto daoProyecto = new DaoProyecto();
+        BeanProyecto proyectoConsultado = null;
+        String mensaje2 = "";
+        String actual = "";
+        int semana = 0;
+        int idProyectoConsultado = 0;
+        try {
+            proyectoJ = new JSONObject(idProyecto);
+            idProyectoConsultado = proyectoJ.getInt("proyecto");
+
+        } catch (JSONException ex) {
+            System.out.println("Error" + ex);
+        }
+        proyectoConsultado = daoProyecto.consultarProyectoporId(idProyectoConsultado);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fin = proyectoConsultado.getFinalProyecto();
+        java.util.Date fechaFin = sdf.parse(fin);
+        Calendar fecha = new GregorianCalendar();
+        int año = fecha.get(Calendar.YEAR);
+        int mes = fecha.get(Calendar.MONTH);
+        int dia = fecha.get(Calendar.DAY_OF_MONTH);
+        actual = "" + año + "-" + (mes + 1) + "-" + dia;
+        java.util.Date fechadateactual = sdf.parse(actual);
+        double valoraCalcular = proyectoConsultado.getValorGanado() / daoProyecto.consultarPresupuestoGastado(idProyectoConsultado);
+
+        if (valoraCalcular == 1) {
+            mensaje = "De acuerdo a lo planeado";
+            mensaje2 = "El costo va a lo planeado";
+            tipo = "info";
+        } else if (valoraCalcular < 1) {
+            mensaje = "No se estan cumplieando las metas";
+            mensaje2 = "El costo no va conforme a lo planeado";
+            tipo = "warning";
+        } else {
+            mensaje = "El costo va a mejor a lo planeado";
+            mensaje2 = "Haz gastado menos de lo planeado";
+            tipo = "success";
+        }
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("mensaje2", mensaje2);
+        respuestas.put("tipo", tipo);
+        try {
+            proyectoJ.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyectoJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    @GET
+    @Path("variacionCronogramaAdministrador")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response variacionCronogramaAdministrador() throws ParseException {
+        JSONObject proyectoJ = new JSONObject();
+        DaoProyecto daoProyecto = new DaoProyecto();
+        BeanProyecto proyectoConsultado = null;
+        String mensaje2 = "";
+        String actual = "";
+        int semana = 0;
+
+        proyectoConsultado = daoProyecto.consultarProyectoporId(idProyectoGlobal);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fin = proyectoConsultado.getFinalProyecto();
+        java.util.Date fechaFin = sdf.parse(fin);
+        Calendar fecha = new GregorianCalendar();
+        int año = fecha.get(Calendar.YEAR);
+        int mes = fecha.get(Calendar.MONTH);
+        int dia = fecha.get(Calendar.DAY_OF_MONTH);
+        actual = "" + año + "-" + (mes + 1) + "-" + dia;
+        java.util.Date fechadateactual = sdf.parse(actual);
+
+        if (fechadateactual.before(fechaFin)) {
+            semana = ((daoProyecto.consultarDias(proyectoConsultado.getInicioProyecto())) / 7) + 1;
+        } else {
+            semana = 0;
+        }
+        double valoraCalcular = proyectoConsultado.getValorGanado() - (proyectoConsultado.getValorPlaneado() * semana);
+        System.out.println("Valor Calcular" + valoraCalcular);
+        if (valoraCalcular == 0) {
+            mensaje = "De acuerdo a lo planeado";
+            mensaje2 = "Vas bien de tiempo";
+            tipo = "info";
+        } else if (valoraCalcular > 0) {
+            mensaje = "Mejor que lo planeado";
+            mensaje2 = "Vas adelantado";
+            tipo = "success";
+        } else {
+            mensaje = "No se estan cumpliendo los objetivos";
+            mensaje2 = "Vas con retraso de acuerdo a lo planeado";
+            tipo = "warning";
+        }
+
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("mensaje2", mensaje2);
+        respuestas.put("tipo", tipo);
+        try {
+            proyectoJ.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyectoJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    @GET
+    @Path("variaciondelCostoAdministrador")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response variaciondelCostoAdministrador() throws ParseException {
+        JSONObject proyectoJ = new JSONObject();
+        DaoProyecto daoProyecto = new DaoProyecto();
+        BeanProyecto proyectoConsultado = null;
+        String mensaje2 = "";
+        String actual = "";
+        int semana = 0;
+
+        proyectoConsultado = daoProyecto.consultarProyectoporId(idProyectoGlobal);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fin = proyectoConsultado.getFinalProyecto();
+        java.util.Date fechaFin = sdf.parse(fin);
+        Calendar fecha = new GregorianCalendar();
+        int año = fecha.get(Calendar.YEAR);
+        int mes = fecha.get(Calendar.MONTH);
+        int dia = fecha.get(Calendar.DAY_OF_MONTH);
+        actual = "" + año + "-" + (mes + 1) + "-" + dia;
+        java.util.Date fechadateactual = sdf.parse(actual);
+
+        if (fechadateactual.before(fechaFin)) {
+            semana = ((daoProyecto.consultarDias(proyectoConsultado.getInicioProyecto())) / 7) + 1;
+        } else {
+            semana = 0;
+        }
+        double valoraCalcular = (proyectoConsultado.getValorPlaneado() * semana) - daoProyecto.consultarPresupuestoGastado(idProyectoGlobal);
+        System.out.println("Valor a " + valoraCalcular);
+
+        if (valoraCalcular == 0) {
+            mensaje = "De acuerdo a lo planeado";
+            mensaje2 = "El proyecto va de acuerdo";
+            tipo = "info";
+        } else if (valoraCalcular > 0) {
+            mensaje = "Mejor que lo planeado";
+            mensaje2 = "El proyecto esta siendo más barato a lo planeado";
+            tipo = "success";
+        } else {
+            mensaje = "No se estan cumpliendo los objetivos";
+            mensaje2 = "El proyecto esta siendo más caro a lo planeado";
+            tipo = "warning";
+        }
+
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("mensaje2", mensaje2);
+        respuestas.put("tipo", tipo);
+        try {
+            proyectoJ.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyectoJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    @GET
+    @Path("desempeniodelCronogranaAdministrador")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response desempeniodelCronogranaAdministrador() throws ParseException {
+        JSONObject proyectoJ = new JSONObject();
+        DaoProyecto daoProyecto = new DaoProyecto();
+        BeanProyecto proyectoConsultado = null;
+        String mensaje2 = "";
+        String actual = "";
+        int semana = 0;
+
+        proyectoConsultado = daoProyecto.consultarProyectoporId(idProyectoGlobal);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fin = proyectoConsultado.getFinalProyecto();
+        java.util.Date fechaFin = sdf.parse(fin);
+        Calendar fecha = new GregorianCalendar();
+        int año = fecha.get(Calendar.YEAR);
+        int mes = fecha.get(Calendar.MONTH);
+        int dia = fecha.get(Calendar.DAY_OF_MONTH);
+        actual = "" + año + "-" + (mes + 1) + "-" + dia;
+        java.util.Date fechadateactual = sdf.parse(actual);
+        double valoraCalcular = daoProyecto.consultarPresupuestoGastado(idProyectoGlobal) / (proyectoConsultado.getValorPlaneado() * semana);
+        System.out.println("El valor a calcular en variaciondelCostoLider es " + valoraCalcular);
+        System.out.println("El valor a pleado en variaciondelCostoLider es " + proyectoConsultado.getValorPlaneado());
+        System.out.println("El valor ganado en variaciondelCostoLider es " + daoProyecto.consultarPresupuestoGastado(idProyectoGlobal));
+
+        if (valoraCalcular == 0) {
+            mensaje = "De acuerdo a lo planeado";
+            mensaje2 = "El trabajo va deacuerdo a lo planeado";
+            tipo = "info";
+        } else if (valoraCalcular > 0) {
+            mensaje = "Mejor que lo planeado";
+            mensaje2 = "El trabajo es mayor al planeado ";
+            tipo = "success";
+        } else {
+            mensaje = "El trabajo es menor que al planeado";
+            mensaje2 = "Vas a trasado";
+            tipo = "warning";
+        }
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("mensaje2", mensaje2);
+        respuestas.put("tipo", tipo);
+        try {
+            proyectoJ.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyectoJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
+    @GET
+    @Path("desempeniodelCostoAdministrador")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response desempeniodelCostoAdministrador() throws ParseException {
+        JSONObject proyectoJ = new JSONObject();
+        DaoProyecto daoProyecto = new DaoProyecto();
+        BeanProyecto proyectoConsultado = null;
+        String mensaje2 = "";
+        String actual = "";
+        int semana = 0;
+
+        proyectoConsultado = daoProyecto.consultarProyectoporId(idProyectoGlobal);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String fin = proyectoConsultado.getFinalProyecto();
+        java.util.Date fechaFin = sdf.parse(fin);
+        Calendar fecha = new GregorianCalendar();
+        int año = fecha.get(Calendar.YEAR);
+        int mes = fecha.get(Calendar.MONTH);
+        int dia = fecha.get(Calendar.DAY_OF_MONTH);
+        actual = "" + año + "-" + (mes + 1) + "-" + dia;
+        java.util.Date fechadateactual = sdf.parse(actual);
+        double valoraCalcular = proyectoConsultado.getValorGanado() / daoProyecto.consultarPresupuestoGastado(idProyectoGlobal);
+
+        if (valoraCalcular == 1) {
+            mensaje = "De acuerdo a lo planeado";
+            mensaje2 = "El costo va a lo planeado";
+            tipo = "info";
+        } else if (valoraCalcular < 1) {
+            mensaje = "No se estan cumplieando las metas";
+            mensaje2 = "El costo no va conforme a lo planeado";
+            tipo = "warning";
+        } else {
+            mensaje = "El costo va a mejor a lo planeado";
+            mensaje2 = "Haz gastado menos de lo planeado";
+            tipo = "success";
+        }
+        respuestas.put("mensaje", mensaje);
+        respuestas.put("mensaje2", mensaje2);
+        respuestas.put("tipo", tipo);
+        try {
+            proyectoJ.put("respuesta", respuestas);
+
+        } catch (JSONException e) {
+            System.out.println("Error" + e);
+        }
+        Response.ResponseBuilder constructor = Response.ok(proyectoJ.toString());
+        constructor.header("Access-Control-Allow-Origin", "*");
+        constructor.header("Access-Control-Allow-Methods", "*");
+        return constructor.build();
+    }
+
 }

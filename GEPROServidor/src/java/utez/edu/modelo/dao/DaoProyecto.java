@@ -336,7 +336,7 @@ public class DaoProyecto {
         try {
             con = Conexion.getConexion();
             psm = con.prepareCall("select COUNT(idUsuario)as RecursoHumano from usuario where idProyecto=? and tipo=3");
-            psm.setInt(1, suma);
+            psm.setInt(1, idProyecto);
             rs = psm.executeQuery();
             if (rs.next()) {
                 suma = rs.getInt("RecursoHumano");
@@ -386,7 +386,7 @@ public class DaoProyecto {
 
     public static void main(String[] args) {
         DaoProyecto daoProyecto = new DaoProyecto();
-        System.out.println(daoProyecto.agregarValorGanado(1, 26));
+        System.out.println(daoProyecto.contarRecursosHumanos(1));
 
     }
 
