@@ -5,10 +5,13 @@
  */
 package utez.edu.modelo.dao;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import utez.edu.modelo.bean.BeanActividad;
+import utez.edu.modelo.bean.BeanUsuario;
 import utez.edu.mx.utilerias.Conexion;
 
 
@@ -20,6 +23,8 @@ public class DaoActividades {
     Connection cn;
     ResultSet rs;
     PreparedStatement ps;
+     private CallableStatement csm;
+    private boolean resultado;
     
     private String sqlRegistroActividades=("{call pa_registrarActividades (?,?,?)}");
     
@@ -59,5 +64,26 @@ public class DaoActividades {
         
         return idNuevo;
     }
-    
+     public boolean eliminarActvidades(int idUsuario) {
+
+        try {
+            cn = Conexion.getConexion();
+            csm = cn.prepareCall("{call dbo.pa_eliminarActividades (?)}");
+            csm.setInt(1, idUsuario);
+            resultado = csm.executeUpdate() == 1;
+        } catch (SQLException ex) {
+            System.out.println("Error DaoActividad eliminarActvidades()" + ex);
+
+        } finally {
+            try {
+                cn.close();
+                csm.close();
+
+            } catch (SQLException ex) {
+                System.out.println("Error DaoProyecto eliminarActvidades()cerrar" + ex);
+            }
+        }
+
+        return resultado;
+    }
 }
