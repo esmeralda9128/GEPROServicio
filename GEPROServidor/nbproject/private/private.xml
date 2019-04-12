@@ -2,6 +2,12 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group/>
+        <group>
+            <file>file:/C:/Users/Alberto/Documents/GitHub/GEPROServicio/GEPROServidor/src/java/utez/edu/modelo/dao/DaoActividades.java</file>
+            <file>file:/C:/Users/Alberto/Documents/GitHub/GEPROServicio/GEPROServidor/src/java/com/utez/servicio/ServicioGEPRO.java</file>
+            <file>file:/C:/Users/Alberto/Documents/GitHub/GEPROServicio/GEPROServidor/src/java/utez/edu/modelo/dao/DaoUsuario.java</file>
+            <file>file:/C:/Users/Alberto/Documents/GitHub/GEPROServicio/GEPROServidor/src/java/utez/edu/modelo/dao/DaoProyecto.java</file>
+            <file>file:/C:/Users/Alberto/Documents/GitHub/GEPROServicio/GEPROServidor/src/java/utez/edu/modelo/bean/BeanActividad.java</file>
+        </group>
     </open-files>
 </project-private>

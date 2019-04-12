@@ -59,5 +59,14 @@ public class DaoActividades {
         
         return idNuevo;
     }
-    
+    public static void main(String[] args) {
+  DaoActividades actividades = new DaoActividades();
+  BeanActividad actvidad = new BeanActividad();
+  actvidad.setActividad("Nombre Actividad");
+  actvidad.setDescripcion("Descripcion de actividad");
+  actvidad.setFechaActividad("2014-04-10");
+  actvidad.setIdUsuario(1);
+        System.out.println(actividades.registroActividad(actvidad));
+
+    }    
 }
